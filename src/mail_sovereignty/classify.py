@@ -1,5 +1,6 @@
 from mail_sovereignty.constants import (
     AWS_KEYWORDS,
+    FOREIGN_SENDER_KEYWORDS,
     GOOGLE_KEYWORDS,
     INFOMANIAK_KEYWORDS,
     MICROSOFT_KEYWORDS,
@@ -83,12 +84,15 @@ def classify_from_spf(spf_record: str | None) -> str | None:
 
 
 def spf_mentions_providers(spf_record: str | None) -> set[str]:
-    """Return set of hyperscaler providers mentioned in SPF."""
+    """Return set of providers mentioned in SPF (main + foreign senders)."""
     if not spf_record:
         return set()
     blob = spf_record.lower()
     found = set()
     for provider, keywords in PROVIDER_KEYWORDS.items():
+        if any(k in blob for k in keywords):
+            found.add(provider)
+    for provider, keywords in FOREIGN_SENDER_KEYWORDS.items():
         if any(k in blob for k in keywords):
             found.add(provider)
     return found

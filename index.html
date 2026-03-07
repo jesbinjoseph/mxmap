@@ -115,6 +115,7 @@
   }
   .cat-badge.hyperscaler { background: #fee2e2; color: #dc2626; }
   .cat-badge.domestic { background: #dcfce7; color: #16a34a; }
+  .cat-badge.foreign { background: #fef3c7; color: #b45309; }
   .legend-group { margin-top: 8px; }
   .legend-group:first-child { margin-top: 4px; }
   .legend-group-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; display: block; margin-bottom: 2px; }
@@ -192,6 +193,18 @@ function classifyHost(host) {
     return { name: 'AWS', category: 'hyperscaler' };
   if (['infomaniak','mxpool.infomaniak'].some(k => h.includes(k)))
     return { name: 'Infomaniak', category: 'domestic' };
+  if (['mandrillapp.com','mandrill','mcsv.net'].some(k => h.includes(k)))
+    return { name: 'Mailchimp', category: 'foreign' };
+  if (h.includes('sendgrid'))
+    return { name: 'SendGrid', category: 'foreign' };
+  if (h.includes('mailjet'))
+    return { name: 'Mailjet', category: 'foreign' };
+  if (h.includes('mailgun'))
+    return { name: 'Mailgun', category: 'foreign' };
+  if (['sendinblue','brevo'].some(k => h.includes(k)))
+    return { name: 'Brevo', category: 'foreign' };
+  if (h.includes('mailchannels'))
+    return { name: 'MailChannels', category: 'foreign' };
   const parts = host.replace(/^_/, '').split('.');
   const name = parts.length >= 2 ? parts.slice(-2).join('.') : host;
   return { name, category: 'domestic' };
@@ -211,8 +224,7 @@ function parseSpfDelegations(spf) {
 function renderTable(hosts) {
   const rows = hosts.map(host => {
     const cls = classifyHost(host);
-    const badge = cls.category === 'hyperscaler' ? 'hyperscaler' : 'domestic';
-    return `<tr><td class="dn">${cls.name}</td><td><span class="cat-badge ${badge}">${cls.category}</span></td><td class="host" title="${host}">${host}</td></tr>`;
+    return `<tr><td class="dn">${cls.name}</td><td><span class="cat-badge ${cls.category}">${cls.category}</span></td><td class="host" title="${host}">${host}</td></tr>`;
   }).join('');
   return `<table class="dns-table">${rows}</table>`;
 }
@@ -309,7 +321,7 @@ async function loadData() {
       legendGroupHtml('US Hyperscaler', ['microsoft', 'google', 'aws'], dnsData.counts) +
       legendGroupHtml('Domestic / Sovereign', ['sovereign', 'infomaniak', 'swiss-isp'], dnsData.counts) +
       legendGroupHtml(null, ['merged', 'unknown'], dnsData.counts) +
-      '<br><br><small class="legend-error-link">Found an error? <a href="https://github.com/davidhuser/mxmap/issues" target="_blank">Report it on GitHub</a></small>' +
+      '<br><small class="legend-error-link">Found an error? <a href="https://github.com/davidhuser/mxmap/issues" target="_blank">Report it on GitHub</a></small>' +
       '</div>';
     L.DomEvent.disableClickPropagation(div);
     return div;

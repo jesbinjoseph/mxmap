@@ -105,8 +105,9 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
         score += 20
         flags.append("mx_spf_match")
 
-    # SPF mentions multiple hyperscaler providers (-10)
-    if len(spf_providers) >= 2:
+    # SPF mentions multiple main providers (-10)
+    main_spf_providers = spf_providers & set(PROVIDER_KEYWORDS.keys())
+    if len(main_spf_providers) >= 2:
         score -= 10
         flags.append(f"multi_provider_spf:{'+'.join(sorted(spf_providers))}")
 

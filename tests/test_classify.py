@@ -165,3 +165,25 @@ class TestSpfMentionsProviders:
             "v=spf1 include:spf.protection.outlook.com include:_spf.google.com -all"
         )
         assert result == {"microsoft", "google"}
+
+    def test_detects_mailchimp(self):
+        result = spf_mentions_providers(
+            "v=spf1 include:servers.mcsv.net include:spf.mandrillapp.com -all"
+        )
+        assert "mailchimp" in result
+
+    def test_detects_sendgrid(self):
+        result = spf_mentions_providers("v=spf1 include:sendgrid.net -all")
+        assert result == {"sendgrid"}
+
+    def test_mixed_main_and_foreign(self):
+        result = spf_mentions_providers(
+            "v=spf1 include:spf.protection.outlook.com include:spf.mandrillapp.com -all"
+        )
+        assert result == {"microsoft", "mailchimp"}
+
+    def test_foreign_sender_not_in_classify(self):
+        assert classify([], "v=spf1 include:spf.mandrillapp.com -all") == "unknown"
+
+    def test_foreign_sender_not_in_classify_from_spf(self):
+        assert classify_from_spf("v=spf1 include:spf.mandrillapp.com -all") is None

@@ -26,6 +26,15 @@ PROVIDER_KEYWORDS = {
     "infomaniak": INFOMANIAK_KEYWORDS,
 }
 
+FOREIGN_SENDER_KEYWORDS = {
+    "mailchimp": ["mandrillapp.com", "mandrill", "mcsv.net"],
+    "sendgrid": ["sendgrid"],
+    "mailjet": ["mailjet"],
+    "mailgun": ["mailgun"],
+    "brevo": ["sendinblue", "brevo"],
+    "mailchannels": ["mailchannels"],
+}
+
 SPARQL_URL = "https://query.wikidata.org/sparql"
 SPARQL_QUERY = """
 SELECT ?item ?itemLabel ?bfs ?website ?cantonLabel WHERE {

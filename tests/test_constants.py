@@ -4,6 +4,7 @@ from mail_sovereignty.constants import (
     AWS_KEYWORDS,
     INFOMANIAK_KEYWORDS,
     PROVIDER_KEYWORDS,
+    FOREIGN_SENDER_KEYWORDS,
     SKIP_DOMAINS,
 )
 
@@ -17,6 +18,13 @@ def test_keyword_lists_non_empty():
 
 def test_provider_keywords_has_all_providers():
     assert set(PROVIDER_KEYWORDS.keys()) == {"microsoft", "google", "aws", "infomaniak"}
+
+
+def test_foreign_sender_keywords_non_empty():
+    assert FOREIGN_SENDER_KEYWORDS
+    assert "mailchimp" in FOREIGN_SENDER_KEYWORDS
+    assert "sendgrid" in FOREIGN_SENDER_KEYWORDS
+    assert set(FOREIGN_SENDER_KEYWORDS.keys()).isdisjoint(set(PROVIDER_KEYWORDS.keys()))
 
 
 def test_skip_domains_contains_expected():
