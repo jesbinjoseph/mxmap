@@ -147,15 +147,16 @@
   <div class="info-grid">
     <div class="info-card">
       <h3>What is this?</h3>
-      <p>A map of all ~2,100 Swiss municipalities showing which provider handles their official email, based on public DNS records. Municipalities are color-coded by provider type: US-based cloud services, Swiss-based providers, or self-hosted infrastructure.</p>
+      <p>A map of all ~2,100 Swiss municipalities showing which provider handles their official email — grouped by jurisdiction — based on public DNS records.</p>
     </div>
     <div class="info-card">
-      <h3>Why does it matter?</h3>
-      <p>When a municipality uses a US-based provider, that provider may be subject to the US CLOUD Act (2018). Under this law, US authorities can compel US-headquartered companies to disclose stored data in criminal investigations — regardless of where the data is physically stored. Switzerland's Federal Office of Justice has analyzed the legal implications of this extraterritorial reach.</p>
+      <h3>Context</h3>
+      <p>Digital sovereignty: US-based providers are subject to the US CLOUD Act, which allows US authorities to request stored data, regardless of where it is physically hosted. This map makes the current provider landscape visible.</p>
     </div>
     <div class="info-card">
       <h3>How does it work?</h3>
-      <p>Each municipality's domain is checked via public DNS records (MX for incoming mail routing, SPF for authorized senders). The results are matched against known provider signatures and classified by provider and country of origin. Note: DNS records indicate mail routing, not necessarily data residency. Some providers may offer contractual data localization that is not visible at the DNS level.</p>
+      <p>Each municipality's official domain is checked via public DNS records (MX + SPF) and classified by provider type.</p>
+      <p style="font-size:12px;color:#777;margin-top:6px;">Disclaimer: DNS records indicate mail routing and authorized senders, not necessarily where data is stored.</p>
     </div>
     <div class="info-card">
       <h3>Open source &amp; open data</h3>
