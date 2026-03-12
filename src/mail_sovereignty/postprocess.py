@@ -21,6 +21,7 @@ from mail_sovereignty.constants import (
 )
 from mail_sovereignty.dns import (
     lookup_autodiscover,
+    lookup_dkim_selectors,
     lookup_mx,
     lookup_spf,
     resolve_mx_asns,
@@ -148,7 +149,10 @@ async def process_unknown(
                 spf_resolved = await resolve_spf_includes(spf) if spf else ""
                 mx_cnames = await resolve_mx_cnames(mx)
                 mx_asns = await resolve_mx_asns(mx)
-                autodiscover = await lookup_autodiscover(email_domain)
+                autodiscover, dkim = await asyncio.gather(
+                    lookup_autodiscover(email_domain),
+                    lookup_dkim_selectors(email_domain),
+                )
                 provider = classify(
                     mx,
                     spf,
@@ -156,6 +160,7 @@ async def process_unknown(
                     mx_asns=mx_asns or None,
                     resolved_spf=spf_resolved or None,
                     autodiscover=autodiscover or None,
+                    dkim=dkim or None,
                 )
                 gateway = detect_gateway(mx)
                 print(
@@ -176,6 +181,8 @@ async def process_unknown(
                     m["mx_asns"] = sorted(mx_asns)
                 if autodiscover:
                     m["autodiscover"] = autodiscover
+                if dkim:
+                    m["dkim"] = dkim
                 return m
 
         print(
@@ -387,7 +394,14 @@ async def run(data_path: Path) -> None:
             spf_resolved = await resolve_spf_includes(spf) if spf else ""
             mx_cnames = await resolve_mx_cnames(mx) if mx else {}
             mx_asns = await resolve_mx_asns(mx) if mx else set()
-            autodiscover = await lookup_autodiscover(domain)
+            if mx:
+                autodiscover, dkim = await asyncio.gather(
+                    lookup_autodiscover(domain),
+                    lookup_dkim_selectors(domain),
+                )
+            else:
+                autodiscover = await lookup_autodiscover(domain)
+                dkim = {}
             provider = classify(
                 mx,
                 spf,
@@ -395,6 +409,7 @@ async def run(data_path: Path) -> None:
                 mx_asns=mx_asns or None,
                 resolved_spf=spf_resolved or None,
                 autodiscover=autodiscover or None,
+                dkim=dkim or None,
             )
             gateway = detect_gateway(mx) if mx else None
             return (
@@ -407,6 +422,7 @@ async def run(data_path: Path) -> None:
                 provider,
                 gateway,
                 autodiscover,
+                dkim,
             )
 
         results = await asyncio.gather(*[_relookup(b, d) for b, d in dns_relookup])
@@ -420,6 +436,7 @@ async def run(data_path: Path) -> None:
             provider,
             gateway,
             autodiscover,
+            dkim,
         ) in results:
             muni[bfs]["mx"] = mx
             muni[bfs]["spf"] = spf
@@ -434,6 +451,8 @@ async def run(data_path: Path) -> None:
                 muni[bfs]["mx_asns"] = sorted(mx_asns)
             if autodiscover:
                 muni[bfs]["autodiscover"] = autodiscover
+            if dkim:
+                muni[bfs]["dkim"] = dkim
             print(f"  {bfs:>5} {muni[bfs]['name']:<30} -> {provider} (DNS re-lookup)")
 
     # Step 2: Retry DNS for unknowns that have a domain
@@ -449,7 +468,10 @@ async def run(data_path: Path) -> None:
                 spf_resolved = await resolve_spf_includes(spf) if spf else ""
                 mx_cnames = await resolve_mx_cnames(mx)
                 mx_asns = await resolve_mx_asns(mx)
-                autodiscover = await lookup_autodiscover(m["domain"])
+                autodiscover, dkim = await asyncio.gather(
+                    lookup_autodiscover(m["domain"]),
+                    lookup_dkim_selectors(m["domain"]),
+                )
                 provider = classify(
                     mx,
                     spf,
@@ -457,6 +479,7 @@ async def run(data_path: Path) -> None:
                     mx_asns=mx_asns or None,
                     resolved_spf=spf_resolved or None,
                     autodiscover=autodiscover or None,
+                    dkim=dkim or None,
                 )
                 gateway = detect_gateway(mx)
                 m["mx"] = mx
@@ -472,6 +495,8 @@ async def run(data_path: Path) -> None:
                     m["mx_asns"] = sorted(mx_asns)
                 if autodiscover:
                     m["autodiscover"] = autodiscover
+                if dkim:
+                    m["dkim"] = dkim
                 print(f"  RECOVERED {m['bfs']:>5} {m['name']:<30} -> {provider}")
 
     # Step 2.5: SMTP banner check for independent/unknown with MX records

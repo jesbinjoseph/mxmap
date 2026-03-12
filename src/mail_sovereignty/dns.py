@@ -251,6 +251,40 @@ async def lookup_autodiscover(domain: str) -> dict[str, str]:
     return result
 
 
+async def lookup_dkim_selectors(domain: str) -> dict[str, str]:
+    """Check DKIM selector CNAME records for known providers.
+
+    Returns dict mapping provider -> CNAME target for matches found.
+    """
+    from mail_sovereignty.constants import DKIM_CNAME_KEYWORDS, DKIM_SELECTORS
+
+    async def _probe(provider: str, selector: str) -> tuple[str, str] | None:
+        name = f"{selector}._domainkey.{domain}"
+        chain = await lookup_cname_chain(name, max_hops=1)
+        if not chain:
+            return None
+        target = chain[-1].lower()
+        for keyword in DKIM_CNAME_KEYWORDS.get(provider, []):
+            if keyword in target:
+                return (provider, target)
+        return None
+
+    tasks = [
+        _probe(provider, selector)
+        for provider, selectors in DKIM_SELECTORS.items()
+        for selector in selectors
+    ]
+    results = await asyncio.gather(*tasks)
+
+    found: dict[str, str] = {}
+    for result in results:
+        if result:
+            provider, target = result
+            if provider not in found:
+                found[provider] = target
+    return found
+
+
 async def resolve_mx_asns(mx_hosts: list[str]) -> set[int]:
     """Resolve all MX hosts to IPs, look up ASNs, return set of unique ASNs."""
     asns = set()
