@@ -22,6 +22,16 @@ def classify_from_smtp_banner(banner: str, ehlo: str = "") -> str | None:
     return None
 
 
+def classify_from_dkim(dkim: dict[str, str] | None) -> str | None:
+    """Classify provider from DKIM selector CNAME records."""
+    if not dkim:
+        return None
+    # Return the first provider found (dict preserves insertion order)
+    for provider in dkim:
+        return provider
+    return None
+
+
 def classify_from_autodiscover(autodiscover: dict[str, str] | None) -> str | None:
     """Classify provider from autodiscover DNS records."""
     if not autodiscover:
@@ -57,6 +67,7 @@ def classify(
     mx_asns: set[int] | None = None,
     resolved_spf: str | None = None,
     autodiscover: dict[str, str] | None = None,
+    dkim: dict[str, str] | None = None,
 ) -> str:
     """Classify email provider based on MX, CNAME targets, and SPF.
 
@@ -95,7 +106,10 @@ def classify(
             provider = _check_spf_for_provider(resolved_spf.lower())
         if provider:
             return provider
-        # No hyperscaler in SPF — check autodiscover for backend provider
+        # No hyperscaler in SPF — check DKIM/autodiscover for backend provider
+        dkim_provider = classify_from_dkim(dkim)
+        if dkim_provider:
+            return dkim_provider
         ad_provider = classify_from_autodiscover(autodiscover)
         if ad_provider:
             return ad_provider
@@ -103,12 +117,18 @@ def classify(
 
     if mx_records:
         if mx_asns and mx_asns & SWISS_ISP_ASNS.keys():
-            # Check autodiscover for hyperscaler backend behind Swiss ISP relay
+            # Check DKIM/autodiscover for hyperscaler backend behind Swiss ISP relay
+            dkim_provider = classify_from_dkim(dkim)
+            if dkim_provider:
+                return dkim_provider
             ad_provider = classify_from_autodiscover(autodiscover)
             if ad_provider:
                 return ad_provider
             return "swiss-isp"
-        # Check autodiscover for hyperscaler backend behind independent MX
+        # Check DKIM/autodiscover for hyperscaler backend behind independent MX
+        dkim_provider = classify_from_dkim(dkim)
+        if dkim_provider:
+            return dkim_provider
         ad_provider = classify_from_autodiscover(autodiscover)
         if ad_provider:
             return ad_provider

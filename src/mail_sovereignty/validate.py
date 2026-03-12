@@ -7,6 +7,7 @@ from typing import Any
 
 from mail_sovereignty.classify import (
     classify_from_autodiscover,
+    classify_from_dkim,
     classify_from_mx,
     classify_from_smtp_banner,
     classify_from_spf,
@@ -213,6 +214,16 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
             flags.append("autodiscover_confirms")
         elif ad_provider and provider == "independent":
             flags.append(f"autodiscover_suggests:{ad_provider}")
+
+    # DKIM confirms or suggests provider
+    dkim = entry.get("dkim")
+    if dkim:
+        dkim_provider = classify_from_dkim(dkim)
+        if dkim_provider and dkim_provider == provider:
+            score += 5
+            flags.append("dkim_confirms")
+        elif dkim_provider and provider in ("independent", "swiss-isp"):
+            flags.append(f"dkim_suggests:{dkim_provider}")
 
     # Manual override (+5)
     if bfs in MANUAL_OVERRIDE_BFS:

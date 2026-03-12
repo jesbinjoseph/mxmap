@@ -279,6 +279,87 @@ class TestScoreEntry:
         )
         assert with_smtp["score"] == without_smtp["score"] + 5
 
+    def test_dkim_confirms(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "stadtluzern.ch",
+                "mx": ["mail.example.ch"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "1061",
+                "dkim": {
+                    "microsoft": "selector1-stadtluzern-ch._domainkey.stadtluzern.onmicrosoft.com"
+                },
+            }
+        )
+        assert "dkim_confirms" in result["flags"]
+
+    def test_dkim_confirms_adds_score(self):
+        with_dkim = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "stadtluzern.ch",
+                "mx": ["mail.example.ch"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "dkim": {
+                    "microsoft": "selector1-stadtluzern-ch._domainkey.stadtluzern.onmicrosoft.com"
+                },
+            }
+        )
+        without_dkim = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "stadtluzern.ch",
+                "mx": ["mail.example.ch"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+            }
+        )
+        assert with_dkim["score"] == without_dkim["score"] + 5
+
+    def test_dkim_suggests_for_independent(self):
+        result = score_entry(
+            {
+                "provider": "independent",
+                "domain": "example.ch",
+                "mx": ["mail.example.ch"],
+                "spf": "",
+                "bfs": "9000",
+                "dkim": {
+                    "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+                },
+            }
+        )
+        assert "dkim_suggests:microsoft" in result["flags"]
+
+    def test_dkim_suggests_for_swiss_isp(self):
+        result = score_entry(
+            {
+                "provider": "swiss-isp",
+                "domain": "example.ch",
+                "mx": ["mail1.rzobt.ch"],
+                "spf": "",
+                "bfs": "9000",
+                "dkim": {
+                    "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+                },
+            }
+        )
+        assert "dkim_suggests:microsoft" in result["flags"]
+
+    def test_dkim_no_flag_when_absent(self):
+        result = score_entry(
+            {
+                "provider": "independent",
+                "domain": "example.ch",
+                "mx": ["mail.example.ch"],
+                "spf": "",
+                "bfs": "9000",
+            }
+        )
+        assert not any(f.startswith("dkim_") for f in result["flags"])
+
     def test_autodiscover_no_flag_when_unrecognized(self):
         result = score_entry(
             {

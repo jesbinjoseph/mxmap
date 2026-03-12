@@ -162,6 +162,11 @@ class TestScanMunicipality:
                 new_callable=AsyncMock,
                 return_value={},
             ),
+            patch(
+                "mail_sovereignty.preprocess.lookup_dkim_selectors",
+                new_callable=AsyncMock,
+                return_value={},
+            ),
         ):
             result = await scan_municipality(m, sem)
 
@@ -191,6 +196,11 @@ class TestScanMunicipality:
             ),
             patch(
                 "mail_sovereignty.preprocess.lookup_autodiscover",
+                new_callable=AsyncMock,
+                return_value={},
+            ),
+            patch(
+                "mail_sovereignty.preprocess.lookup_dkim_selectors",
                 new_callable=AsyncMock,
                 return_value={},
             ),
@@ -250,6 +260,11 @@ class TestScanMunicipality:
                 new_callable=AsyncMock,
                 return_value={},
             ),
+            patch(
+                "mail_sovereignty.preprocess.lookup_dkim_selectors",
+                new_callable=AsyncMock,
+                return_value={},
+            ),
         ):
             result = await scan_municipality(m, sem)
 
@@ -289,6 +304,11 @@ class TestScanMunicipality:
                 new_callable=AsyncMock,
                 return_value={},
             ),
+            patch(
+                "mail_sovereignty.preprocess.lookup_dkim_selectors",
+                new_callable=AsyncMock,
+                return_value={},
+            ),
         ):
             result = await scan_municipality(m, sem)
 
@@ -325,6 +345,11 @@ class TestScanMunicipality:
                 "mail_sovereignty.preprocess.lookup_autodiscover",
                 new_callable=AsyncMock,
                 return_value={"autodiscover_cname": "autodiscover.outlook.com"},
+            ),
+            patch(
+                "mail_sovereignty.preprocess.lookup_dkim_selectors",
+                new_callable=AsyncMock,
+                return_value={},
             ),
         ):
             result = await scan_municipality(m, sem)
@@ -378,6 +403,11 @@ class TestPreprocessRun:
             ),
             patch(
                 "mail_sovereignty.preprocess.lookup_autodiscover",
+                new_callable=AsyncMock,
+                return_value={},
+            ),
+            patch(
+                "mail_sovereignty.preprocess.lookup_dkim_selectors",
                 new_callable=AsyncMock,
                 return_value={},
             ),

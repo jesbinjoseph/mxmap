@@ -1,6 +1,7 @@
 from mail_sovereignty.classify import (
     classify,
     classify_from_autodiscover,
+    classify_from_dkim,
     classify_from_mx,
     classify_from_smtp_banner,
     classify_from_spf,
@@ -301,6 +302,73 @@ class TestClassify:
         )
         assert result == "independent"
 
+    # ── DKIM in classify() ──
+
+    def test_swiss_isp_with_dkim_microsoft(self):
+        """Swiss ISP relay with DKIM pointing to M365 → microsoft."""
+        result = classify(
+            ["mail1.rzobt.ch"],
+            "",
+            mx_asns={3303},
+            dkim={
+                "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+            },
+        )
+        assert result == "microsoft"
+
+    def test_independent_with_dkim_microsoft(self):
+        """Independent MX with DKIM pointing to M365 → microsoft."""
+        result = classify(
+            ["mail.example.ch"],
+            "",
+            dkim={
+                "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+            },
+        )
+        assert result == "microsoft"
+
+    def test_no_dkim_stays_unchanged(self):
+        """No DKIM data should not change classification."""
+        result = classify(
+            ["mail.example.ch"],
+            "",
+            dkim=None,
+        )
+        assert result == "independent"
+
+    def test_mx_keyword_match_takes_priority_over_dkim(self):
+        """Direct MX keyword match should take priority over DKIM."""
+        result = classify(
+            ["mail.protection.outlook.com"],
+            "",
+            dkim={"google": "google._domainkey.googlehosted.com"},
+        )
+        assert result == "microsoft"
+
+    def test_dkim_takes_priority_over_autodiscover(self):
+        """DKIM should be checked before autodiscover."""
+        result = classify(
+            ["mail.example.ch"],
+            "",
+            mx_asns={3303},
+            autodiscover={"autodiscover_cname": "autodiscover.google.com"},
+            dkim={
+                "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+            },
+        )
+        assert result == "microsoft"
+
+    def test_gateway_with_dkim_fallback(self):
+        """Gateway with no SPF match should fall back to DKIM."""
+        result = classify(
+            ["filter.seppmail.cloud"],
+            "v=spf1 ip4:1.2.3.4 -all",
+            dkim={
+                "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+            },
+        )
+        assert result == "microsoft"
+
     # ── SPF-only resolved fallback ──
 
     def test_spf_only_resolved_fallback(self):
@@ -329,6 +397,31 @@ class TestClassify:
             resolved_spf=None,
         )
         assert result == "unknown"
+
+
+# ── classify_from_dkim() ────────────────────────────────────────────
+
+
+class TestClassifyFromDkim:
+    def test_none_returns_none(self):
+        assert classify_from_dkim(None) is None
+
+    def test_empty_dict_returns_none(self):
+        assert classify_from_dkim({}) is None
+
+    def test_microsoft(self):
+        assert (
+            classify_from_dkim(
+                {"microsoft": "selector1-x._domainkey.x.onmicrosoft.com"}
+            )
+            == "microsoft"
+        )
+
+    def test_google(self):
+        assert (
+            classify_from_dkim({"google": "google._domainkey.googlehosted.com"})
+            == "google"
+        )
 
 
 # ── classify_from_autodiscover() ────────────────────────────────────

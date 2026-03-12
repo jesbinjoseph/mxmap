@@ -128,6 +128,16 @@ CONCURRENCY = 20
 CONCURRENCY_POSTPROCESS = 10
 CONCURRENCY_SMTP = 5
 
+DKIM_SELECTORS: dict[str, list[str]] = {
+    "microsoft": ["selector1", "selector2"],
+    "google": ["google", "google2048"],
+}
+
+DKIM_CNAME_KEYWORDS: dict[str, list[str]] = {
+    "microsoft": ["onmicrosoft.com"],
+    "google": ["domainkey.googlehosted.com", "domainkey.google.com"],
+}
+
 SMTP_BANNER_KEYWORDS = {
     "microsoft": [
         "microsoft esmtp mail service",

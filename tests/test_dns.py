@@ -10,6 +10,7 @@ from mail_sovereignty.dns import (
     lookup_asn_cymru,
     lookup_autodiscover,
     lookup_cname_chain,
+    lookup_dkim_selectors,
     lookup_mx,
     lookup_spf,
     lookup_srv,
@@ -789,4 +790,56 @@ class TestLookupAutodiscover:
             ),
         ):
             result = await lookup_autodiscover("example.ch")
+        assert result == {}
+
+
+class TestLookupDkimSelectors:
+    async def test_microsoft_found(self):
+        async def _cname(name, max_hops=10):
+            if name == "selector1._domainkey.stadtluzern.ch":
+                return [
+                    "selector1-stadtluzern-ch._domainkey.stadtluzern.onmicrosoft.com"
+                ]
+            return []
+
+        with patch(
+            "mail_sovereignty.dns.lookup_cname_chain",
+            new_callable=AsyncMock,
+            side_effect=_cname,
+        ):
+            result = await lookup_dkim_selectors("stadtluzern.ch")
+        assert "microsoft" in result
+        assert "onmicrosoft.com" in result["microsoft"]
+
+    async def test_google_found(self):
+        async def _cname(name, max_hops=10):
+            if name == "google._domainkey.example.ch":
+                return ["google._domainkey.googlehosted.com"]
+            return []
+
+        with patch(
+            "mail_sovereignty.dns.lookup_cname_chain",
+            new_callable=AsyncMock,
+            side_effect=_cname,
+        ):
+            result = await lookup_dkim_selectors("example.ch")
+        assert "google" in result
+        assert "googlehosted.com" in result["google"]
+
+    async def test_no_selectors_found(self):
+        with patch(
+            "mail_sovereignty.dns.lookup_cname_chain",
+            new_callable=AsyncMock,
+            return_value=[],
+        ):
+            result = await lookup_dkim_selectors("example.ch")
+        assert result == {}
+
+    async def test_cname_exists_but_wrong_target(self):
+        with patch(
+            "mail_sovereignty.dns.lookup_cname_chain",
+            new_callable=AsyncMock,
+            return_value=["something.unrelated.com"],
+        ):
+            result = await lookup_dkim_selectors("example.ch")
         assert result == {}
