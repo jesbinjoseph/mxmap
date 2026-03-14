@@ -20,29 +20,18 @@ MIN_AVERAGE_SCORE = int(os.environ.get("MIN_AVERAGE_SCORE", "70"))
 MIN_HIGH_CONFIDENCE_PCT = int(os.environ.get("MIN_HIGH_CONFIDENCE_PCT", "80"))
 HIGH_CONFIDENCE_THRESHOLD = 80
 
-MANUAL_OVERRIDE_BFS = {
-    "6404",
-    "6408",
-    "6413",
-    "6416",
-    "6417",
-    "6423",
-    "6432",
-    "6433",
-    "6434",
-    "6435",
-    "6437",
-    "6451",
-    "6455",
-    "6456",
-    "6458",
-    "6487",
-    "6504",
-    "261",
-    "422",
-    "2056",
-    "6172",
-}
+_OVERRIDES_PATH = Path("overrides.json")
+
+
+def _load_override_bfs() -> set[str]:
+    """Load BFS numbers from overrides.json."""
+    if _OVERRIDES_PATH.exists():
+        with open(_OVERRIDES_PATH, encoding="utf-8") as f:
+            return set(json.load(f).keys())
+    return set()
+
+
+MANUAL_OVERRIDE_BFS = _load_override_bfs()
 
 
 POTENTIAL_GATEWAY_THRESHOLD = 5
@@ -237,6 +226,26 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
             flags.append("tenant_confirms")
         elif tc_provider and provider in ("independent", "swiss-isp"):
             flags.append(f"tenant_suggests:{tc_provider}")
+
+    # Multi-source agreement (+10)
+    sources_detail = entry.get("sources_detail", {})
+    if sources_detail:
+        domain_val = entry.get("domain", "")
+        agreeing_sources = sum(
+            1 for src_domains in sources_detail.values() if domain_val in src_domains
+        )
+        if agreeing_sources >= 2:
+            score += 10
+            flags.append("multi_source_agreement")
+
+    # Resolve-level flags
+    resolve_flags = entry.get("resolve_flags", [])
+    if "website_mismatch" in resolve_flags:
+        score -= 10
+        flags.append("website_mismatch")
+    if "bfs_only" in resolve_flags:
+        score -= 5
+        flags.append("bfs_only")
 
     # Manual override (+5)
     if bfs in MANUAL_OVERRIDE_BFS:

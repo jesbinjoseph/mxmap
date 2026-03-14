@@ -14,8 +14,8 @@ dependencies = [
 ]
 
 [project.scripts]
-preprocess = "mail_sovereignty.cli:preprocess"
-postprocess = "mail_sovereignty.cli:postprocess"
+resolve-domains = "mail_sovereignty.cli:resolve_domains"
+classify-providers = "mail_sovereignty.cli:classify_providers"
 validate = "mail_sovereignty.cli:validate"
 
 [tool.hatch.build.targets.wheel]

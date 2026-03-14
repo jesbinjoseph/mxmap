@@ -481,6 +481,136 @@ class TestScoreEntry:
         )
         assert not any(f.startswith("autodiscover_") for f in result["flags"])
 
+    def test_multi_source_agreement(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "bern.ch",
+                "mx": ["bern-ch.mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "sources_detail": {
+                    "scrape": ["bern.ch"],
+                    "wikidata": ["bern.ch"],
+                    "guess": [],
+                },
+            }
+        )
+        assert "multi_source_agreement" in result["flags"]
+
+    def test_multi_source_agreement_adds_score(self):
+        with_sources = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "bern.ch",
+                "mx": ["bern-ch.mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "sources_detail": {
+                    "scrape": ["bern.ch"],
+                    "wikidata": ["bern.ch"],
+                    "guess": [],
+                },
+            }
+        )
+        without_sources = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "bern.ch",
+                "mx": ["bern-ch.mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+            }
+        )
+        assert with_sources["score"] == without_sources["score"] + 10
+
+    def test_no_multi_source_when_single_source(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "bern.ch",
+                "mx": ["bern-ch.mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "sources_detail": {
+                    "scrape": ["bern.ch"],
+                    "wikidata": [],
+                    "guess": [],
+                },
+            }
+        )
+        assert "multi_source_agreement" not in result["flags"]
+
+    def test_website_mismatch_flag(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "resolve_flags": ["website_mismatch"],
+            }
+        )
+        assert "website_mismatch" in result["flags"]
+
+    def test_website_mismatch_subtracts_score(self):
+        with_mismatch = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "resolve_flags": ["website_mismatch"],
+            }
+        )
+        without_mismatch = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+            }
+        )
+        assert with_mismatch["score"] == without_mismatch["score"] - 10
+
+    def test_bfs_only_flag(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "resolve_flags": ["bfs_only"],
+            }
+        )
+        assert "bfs_only" in result["flags"]
+
+    def test_bfs_only_subtracts_score(self):
+        with_bfs_only = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "resolve_flags": ["bfs_only"],
+            }
+        )
+        without_bfs_only = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+            }
+        )
+        assert with_bfs_only["score"] == without_bfs_only["score"] - 5
+
 
 # ── print_report() ───────────────────────────────────────────────────
 
