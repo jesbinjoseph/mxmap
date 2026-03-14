@@ -3,7 +3,7 @@
   "89": {"domain": "niederglatt-zh.ch", "reason": "Hyphenated, not subdomain"},
   "120": {"domain": "wald-zh.ch", "reason": "Hyphenated, not subdomain"},
   "248": {"domain": "uitikon.org", "reason": "Email on .org domain"},
-  "261": {"domain": "stadt-zuerich.ch", "reason": "Not gemeinde-zuerich.ch"},
+  "261": {"domain": "zuerich.ch", "reason": "Email on zuerich.ch, stadt-zuerich.ch is admin-only (no MX)"},
   "420": {"domain": "rual.ch", "reason": "Not the Hornussergesellschaft"},
   "421": {"domain": "wynigen.ch", "reason": "Shared administration"},
   "422": {"domain": "ruetibeilyssach.ch", "reason": "Compound name joined"},
