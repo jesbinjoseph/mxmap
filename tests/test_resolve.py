@@ -96,6 +96,25 @@ class TestGuessDomains:
         domains = guess_domains("Rüti bei Lyssach")
         assert "ruetibeilyssach.ch" in domains
 
+    def test_slash_name_generates_individual_parts(self):
+        """'Celerina/Schlarigna' yields guesses for each part."""
+        domains = guess_domains("Celerina/Schlarigna")
+        assert "celerina.ch" in domains
+        assert "schlarigna.ch" in domains
+        assert "gemeinde-celerina.ch" in domains
+
+    def test_slash_name_with_spaces(self):
+        """'Sils im Engadin/Segl' yields guesses for each part."""
+        domains = guess_domains("Sils im Engadin/Segl")
+        assert "segl.ch" in domains
+        assert "sils-im-engadin.ch" in domains
+
+    def test_no_slash_unchanged(self):
+        """Names without '/' produce the same results as before."""
+        domains = guess_domains("Bern")
+        assert "bern.ch" in domains
+        assert "gemeinde-bern.ch" in domains
+
 
 # ── detect_website_mismatch() ────────────────────────────────────────
 
@@ -256,6 +275,26 @@ class TestScoreDomainSources:
         result = score_domain_sources(sources, "Example", "example.ch")
         assert result["source"] == "scrape"
 
+    def test_tiebreaker_scrape_preferred(self):
+        """When tied on source count, the domain found by scrape wins."""
+        sources = {
+            "scrape": {"email.ch"},
+            "wikidata": {"website.ch"},
+            "guess": set(),
+        }
+        result = score_domain_sources(sources, "Test", "website.ch")
+        assert result["domain"] == "email.ch"
+
+    def test_no_tie_unaffected(self):
+        """When one domain clearly wins on source count, tiebreaker doesn't change result."""
+        sources = {
+            "scrape": {"winner.ch"},
+            "wikidata": {"winner.ch"},
+            "guess": {"loser.ch"},
+        }
+        result = score_domain_sources(sources, "Test", "winner.ch")
+        assert result["domain"] == "winner.ch"
+
 
 # ── fetch_wikidata() ─────────────────────────────────────────────────
 
@@ -343,6 +382,17 @@ class TestDecryptTypo3:
     def test_empty_string(self):
         assert decrypt_typo3("") == ""
 
+    def test_offset_10_celerina(self):
+        """Site encrypted with +10 offset; decrypt with -10 (== 16 mod 26)."""
+        encoded = "wksvdy4sxpyJmovobsxk8mr"
+        decrypted = decrypt_typo3(encoded, offset=-10)
+        assert decrypted == "mailto:info@celerina.ch"
+
+    def test_standard_offset_still_works(self):
+        """No regression: offset=2 (default) still decrypts standard TYPO3."""
+        encrypted = "kygjrm8yYz,af"
+        assert decrypt_typo3(encrypted, offset=2) == "mailto:a@b.ch"
+
 
 # ── extract_email_domains() ──────────────────────────────────────────
 
@@ -360,6 +410,18 @@ class TestExtractEmailDomains:
         html = """linkTo_UnCryptMailto('kygjrm8yYz,af')"""
         domains = extract_email_domains(html)
         assert "b.ch" in domains
+
+    def test_typo3_url_encoded_quotes(self):
+        """TYPO3 regex matches %27 (URL-encoded single quote)."""
+        html = "linkTo_UnCryptMailto(%27kygjrm8yYz,af%27)"
+        domains = extract_email_domains(html)
+        assert "b.ch" in domains
+
+    def test_typo3_auto_offset_detection(self):
+        """Auto-detect offset for non-standard TYPO3 encryption (e.g. offset 10)."""
+        html = "linkTo_UnCryptMailto(%27wksvdy4sxpyJmovobsxk8mr%27)"
+        domains = extract_email_domains(html)
+        assert "celerina.ch" in domains
 
     def test_skip_domains_filtered(self):
         html = "admin@example.com test@sentry.io"

@@ -29,7 +29,9 @@ ORDER BY xsd:integer(?bfs)
 """
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
-TYPO3_RE = re.compile(r"linkTo_UnCryptMailto\(['\"]([^'\"]+)['\"]")
+TYPO3_RE = re.compile(
+    r"linkTo_UnCryptMailto\((?:['\"]|%27|%22)([^'\"]+?)(?:['\"]|%27|%22)"
+)
 SKIP_DOMAINS = {
     "example.com",
     "example.ch",

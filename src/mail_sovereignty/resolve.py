@@ -68,54 +68,78 @@ def _slugify_name(name: str) -> set[str]:
 
 def guess_domains(name: str, canton: str = "") -> list[str]:
     """Generate a set of plausible domain guesses for a municipality."""
-    raw = name.lower().strip()
-    raw = re.sub(r"\s*\(.*?\)\s*", "", raw)
 
-    # German umlaut transliteration
-    de = raw.replace("\u00fc", "ue").replace("\u00e4", "ae").replace("\u00f6", "oe")
-    # French accent removal
-    fr = raw
-    for a, b in [
-        ("\u00e9", "e"),
-        ("\u00e8", "e"),
-        ("\u00ea", "e"),
-        ("\u00eb", "e"),
-        ("\u00e0", "a"),
-        ("\u00e2", "a"),
-        ("\u00f4", "o"),
-        ("\u00ee", "i"),
-        ("\u00f9", "u"),
-        ("\u00fb", "u"),
-        ("\u00e7", "c"),
-        ("\u00ef", "i"),
-    ]:
-        fr = fr.replace(a, b)
+    def _slugs_for(text: str) -> set[str]:
+        raw = text.lower().strip()
+        raw = re.sub(r"\s*\(.*?\)\s*", "", raw)
 
-    def slugify(s):
-        s = re.sub(r"['\u2019`]", "", s)
-        s = re.sub(r"[^a-z0-9]+", "-", s)
-        return s.strip("-")
+        de = raw.replace("\u00fc", "ue").replace("\u00e4", "ae").replace("\u00f6", "oe")
+        fr = raw
+        for a, b in [
+            ("\u00e9", "e"),
+            ("\u00e8", "e"),
+            ("\u00ea", "e"),
+            ("\u00eb", "e"),
+            ("\u00e0", "a"),
+            ("\u00e2", "a"),
+            ("\u00f4", "o"),
+            ("\u00ee", "i"),
+            ("\u00f9", "u"),
+            ("\u00fb", "u"),
+            ("\u00e7", "c"),
+            ("\u00ef", "i"),
+        ]:
+            fr = fr.replace(a, b)
 
-    slugs = {slugify(de), slugify(fr), slugify(raw)} - {""}
+        def slugify(s):
+            s = re.sub(r"['\u2019`]", "", s)
+            s = re.sub(r"[^a-z0-9]+", "-", s)
+            return s.strip("-")
+
+        slugs = {slugify(de), slugify(fr), slugify(raw)} - {""}
+
+        # Compound name handling: join all words
+        # e.g. "Rüti bei Lyssach" -> "ruetibeilyssach.ch"
+        extras = set()
+        for variant in [de, fr, raw]:
+            joined = slugify(variant).replace("-", "")
+            if joined and joined not in slugs:
+                extras.add(joined)
+
+        return slugs, extras
+
+    # Split on "/" to generate guesses for each part independently
+    parts = [p.strip() for p in name.split("/") if p.strip()]
+
+    all_slugs: set[str] = set()
+    all_extras: set[str] = set()
+
+    # Always generate from the full name
+    slugs, extras = _slugs_for(name)
+    all_slugs |= slugs
+    all_extras |= extras
+
+    # Also generate from each "/" part individually
+    if len(parts) > 1:
+        for part in parts:
+            slugs, extras = _slugs_for(part)
+            all_slugs |= slugs
+            all_extras |= extras
+
     candidates = set()
-    for slug in slugs:
+    canton_abbrev = CANTON_ABBREVIATIONS.get(canton, "")
+
+    for slug in all_slugs:
         candidates.add(f"{slug}.ch")
         candidates.add(f"gemeinde-{slug}.ch")
         candidates.add(f"commune-de-{slug}.ch")
         candidates.add(f"comune-di-{slug}.ch")
         candidates.add(f"stadt-{slug}.ch")
-
-        # Canton subdomain: e.g. niederglatt.zh.ch
-        canton_abbrev = CANTON_ABBREVIATIONS.get(canton, "")
         if canton_abbrev:
             candidates.add(f"{slug}.{canton_abbrev}.ch")
 
-    # Compound name handling: join all words
-    # e.g. "Rüti bei Lyssach" -> "ruetibeilyssach.ch"
-    for variant in [de, fr, raw]:
-        joined = slugify(variant).replace("-", "")
-        if joined and joined not in slugs:
-            candidates.add(f"{joined}.ch")
+    for joined in all_extras:
+        candidates.add(f"{joined}.ch")
 
     return sorted(candidates)
 
@@ -211,7 +235,10 @@ def score_domain_sources(
         }
 
     # Pick domain with most source agreement
-    best_domain = max(domain_sources, key=lambda d: len(domain_sources[d]))
+    best_domain = max(
+        domain_sources,
+        key=lambda d: (len(domain_sources[d]), "scrape" in domain_sources[d]),
+    )
     best_sources = domain_sources[best_domain]
     source_count = len(best_sources)
 
@@ -321,9 +348,8 @@ def decrypt_typo3(encoded: str, offset: int = 2) -> str:
         decrypted = False
         for start, end in ranges:
             if start <= code <= end:
-                n = code + offset
-                if n > end:
-                    n = start + (n - end - 1)
+                size = end - start + 1
+                n = start + (code - start + offset) % size
                 result.append(chr(n))
                 decrypted = True
                 break
@@ -348,12 +374,14 @@ def extract_email_domains(html: str) -> set[str]:
                 domains.add(domain)
 
     for encoded in TYPO3_RE.findall(html):
-        decoded = decrypt_typo3(encoded)
-        decoded = decoded.replace("mailto:", "")
-        if "@" in decoded:
-            domain = decoded.split("@")[1].lower()
-            if domain not in SKIP_DOMAINS:
-                domains.add(domain)
+        for offset in range(-25, 26):
+            decoded = decrypt_typo3(encoded, offset)
+            decoded = decoded.replace("mailto:", "")
+            if "@" in decoded and EMAIL_RE.search(decoded):
+                domain = decoded.split("@")[1].lower()
+                if domain not in SKIP_DOMAINS:
+                    domains.add(domain)
+                break
 
     return domains
 
