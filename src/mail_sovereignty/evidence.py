@@ -8,6 +8,7 @@ class Signal:
     weight: float  # 0.0–1.0 reflecting reliability of this signal type
     detail: str  # human-readable description
     raw_value: str  # the raw DNS data that triggered this
+    group: str = ""  # signal group for deduplication (e.g. "spf", "mx")
 
 
 @dataclass
@@ -18,63 +19,99 @@ class ClassificationResult:
     gateway: str | None = None
 
 
-# Signal weight constants
-SIGNAL_WEIGHTS = {
-    "mx": 1.0,
-    "mx_cname": 0.95,
-    "dkim": 0.85,
-    "spf": 0.75,
-    "spf_resolved": 0.65,
-    "autodiscover_cname": 0.60,
-    "autodiscover_srv": 0.55,
-    "smtp": 0.50,
-    "tenant": 0.50,
-    "asn": 0.30,
+# ── Group-based confidence model ──────────────────────────────────
+# Each group's weight reflects how hard the signal is to mask.
+# Weights sum to 1.0 so confidence = sum of matching group weights.
+
+SIGNAL_GROUP_WEIGHTS: dict[str, float] = {
+    "spf": 0.30,
+    "mx": 0.25,
+    "dkim": 0.18,
+    "autodiscover": 0.09,
+    "smtp": 0.06,
+    "tenant": 0.06,
+    "asn": 0.06,
+}
+
+# Map each signal source to its deduplication group
+SIGNAL_TO_GROUP: dict[str, str] = {
+    "mx": "mx",
+    "mx_cname": "mx",
+    "spf": "spf",
+    "spf_resolved": "spf",
+    "dkim": "dkim",
+    "autodiscover": "autodiscover",
+    "smtp": "smtp",
+    "tenant": "tenant",
+    "asn": "asn",
+}
+
+# Backward-compatible alias (maps every known source to a weight)
+SIGNAL_WEIGHTS: dict[str, float] = {
+    "mx": SIGNAL_GROUP_WEIGHTS["mx"],
+    "mx_cname": SIGNAL_GROUP_WEIGHTS["mx"],
+    "dkim": SIGNAL_GROUP_WEIGHTS["dkim"],
+    "spf": SIGNAL_GROUP_WEIGHTS["spf"],
+    "spf_resolved": SIGNAL_GROUP_WEIGHTS["spf"],
+    "autodiscover_cname": SIGNAL_GROUP_WEIGHTS["autodiscover"],
+    "autodiscover_srv": SIGNAL_GROUP_WEIGHTS["autodiscover"],
+    "smtp": SIGNAL_GROUP_WEIGHTS["smtp"],
+    "tenant": SIGNAL_GROUP_WEIGHTS["tenant"],
+    "asn": SIGNAL_GROUP_WEIGHTS["asn"],
 }
 
 
 def resolve_provider(signals: list[Signal]) -> tuple[str, float]:
-    """Aggregate weighted evidence per provider, return (winner, confidence).
+    """Aggregate weighted evidence per provider using group deduplication.
 
-    Confidence = top provider's total weight / sum of max possible weight
-    for signals present, clamped 0–1.
+    Each signal group (spf, mx, dkim, …) is counted at most once per
+    provider.  Confidence = sum of group weights for the winning provider,
+    already in 0–1 because group weights sum to 1.0.
     """
     if not signals:
         return ("unknown", 0.0)
 
-    provider_weights: dict[str, float] = {}
+    # Per provider, track which groups matched (keep best weight per group)
+    provider_groups: dict[str, dict[str, float]] = {}
     for signal in signals:
-        if signal.provider is not None:
-            provider_weights[signal.provider] = (
-                provider_weights.get(signal.provider, 0.0) + signal.weight
-            )
+        if signal.provider is None:
+            continue
+        group = signal.group or SIGNAL_TO_GROUP.get(signal.source, signal.source)
+        group_weight = SIGNAL_GROUP_WEIGHTS.get(group, 0.0)
+        groups = provider_groups.setdefault(signal.provider, {})
+        groups[group] = max(groups.get(group, 0.0), group_weight)
 
-    if not provider_weights:
+    if not provider_groups:
         return ("unknown", 0.0)
 
-    sorted_providers = sorted(provider_weights.items(), key=lambda x: -x[1])
-    winner, winner_weight = sorted_providers[0]
+    # Sum group weights per provider
+    provider_totals = {
+        p: sum(weights.values()) for p, weights in provider_groups.items()
+    }
 
-    # Sum of max possible weight for all signal sources present
-    total_possible = sum(
-        signal.weight for signal in signals if signal.provider is not None
-    )
-    confidence = min(1.0, winner_weight / total_possible) if total_possible > 0 else 0.0
+    sorted_providers = sorted(provider_totals.items(), key=lambda x: -x[1])
+    winner, winner_total = sorted_providers[0]
+
+    confidence = min(1.0, winner_total)
 
     return (winner, confidence)
 
 
-def has_conflict(signals: list[Signal], threshold: float = 0.15) -> bool:
+def has_conflict(signals: list[Signal], threshold: float = 0.05) -> bool:
     """Return True if top two providers are within threshold of each other."""
-    provider_weights: dict[str, float] = {}
+    provider_groups: dict[str, dict[str, float]] = {}
     for signal in signals:
-        if signal.provider is not None:
-            provider_weights[signal.provider] = (
-                provider_weights.get(signal.provider, 0.0) + signal.weight
-            )
+        if signal.provider is None:
+            continue
+        group = signal.group or SIGNAL_TO_GROUP.get(signal.source, signal.source)
+        group_weight = SIGNAL_GROUP_WEIGHTS.get(group, 0.0)
+        groups = provider_groups.setdefault(signal.provider, {})
+        groups[group] = max(groups.get(group, 0.0), group_weight)
 
-    if len(provider_weights) < 2:
+    if len(provider_groups) < 2:
         return False
 
-    sorted_weights = sorted(provider_weights.values(), reverse=True)
-    return (sorted_weights[0] - sorted_weights[1]) < threshold
+    totals = sorted(
+        (sum(g.values()) for g in provider_groups.values()), reverse=True
+    )
+    return (totals[0] - totals[1]) < threshold

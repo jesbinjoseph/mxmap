@@ -234,13 +234,13 @@ class TestClassify:
         )
         assert result == "independent"
 
-    def test_gateway_does_not_override_direct_mx_match(self):
-        """If MX directly matches a provider, gateway check is skipped."""
+    def test_conflicting_mx_spf_spf_wins(self):
+        """When MX says microsoft and SPF says google, SPF wins (higher weight)."""
         result = classify(
             ["mail.protection.outlook.com"],
             "v=spf1 include:_spf.google.com -all",
         )
-        assert result == "microsoft"
+        assert result == "google"
 
     # ── Autodiscover in classify() ──
 
@@ -793,7 +793,7 @@ class TestClassifyWithEvidence:
             "",
             dkim={"google": "google._domainkey.googlehosted.com"},
         )
-        # MX (weight 1.0) > DKIM (weight 0.85), so microsoft wins
+        # MX (weight 0.25) > DKIM (weight 0.18), so microsoft wins
         assert r.provider == "microsoft"
         assert any(s.source == "mx" and s.provider == "microsoft" for s in r.signals)
         assert any(s.source == "dkim" and s.provider == "google" for s in r.signals)
@@ -804,8 +804,8 @@ class TestClassifyWithEvidence:
             "v=spf1 include:spf.protection.outlook.com -all",
             dkim={"google": "google._domainkey.googlehosted.com"},
         )
-        # SPF microsoft (0.75) vs DKIM google (0.85) → google wins
-        assert r.provider == "google"
+        # SPF microsoft (0.30) vs DKIM google (0.18) → microsoft wins
+        assert r.provider == "microsoft"
         assert r.gateway == "cleanmail"
 
     def test_autodiscover_produces_signal(self):

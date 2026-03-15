@@ -88,13 +88,27 @@ def _detect_potential_gateways(
 
 
 def _has_signal_conflict(classification_signals: list[dict]) -> bool:
-    """Check if classification signals contain conflicting providers."""
-    provider_weights: dict[str, float] = {}
+    """Check if classification signals contain conflicting providers.
+
+    Uses group-based deduplication: each group counted at most once per
+    provider.  Conflict if two providers both have total >= 0.20.
+    """
+    from mail_sovereignty.evidence import SIGNAL_GROUP_WEIGHTS, SIGNAL_TO_GROUP
+
+    provider_groups: dict[str, dict[str, float]] = {}
     for sig in classification_signals:
         p = sig.get("provider")
-        if p is not None:
-            provider_weights[p] = provider_weights.get(p, 0.0) + sig.get("weight", 0.0)
-    high_weight_providers = [p for p, w in provider_weights.items() if w > 0.5]
+        if p is None:
+            continue
+        group = sig.get("group", SIGNAL_TO_GROUP.get(sig["source"], sig["source"]))
+        group_weight = SIGNAL_GROUP_WEIGHTS.get(group, 0.0)
+        groups = provider_groups.setdefault(p, {})
+        groups[group] = max(groups.get(group, 0.0), group_weight)
+
+    provider_totals = {
+        p: sum(weights.values()) for p, weights in provider_groups.items()
+    }
+    high_weight_providers = [p for p, w in provider_totals.items() if w > 0.20]
     return len(high_weight_providers) >= 2
 
 
@@ -117,8 +131,98 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     flags = []
 
     if classification_confidence is not None:
-        # Evidence-based scoring: use classification confidence as base
+        # Evidence-based scoring: classification confidence is the base
         score = round(classification_confidence)
+
+        # Multi-source agreement (+5)
+        sources_detail = entry.get("sources_detail", {})
+        if sources_detail:
+            domain_val = entry.get("domain", "")
+            agreeing_sources = sum(
+                1 for src_domains in sources_detail.values() if domain_val in src_domains
+            )
+            if agreeing_sources >= 2:
+                score += 5
+                flags.append("multi_source_agreement")
+
+        # Website mismatch (-10)
+        resolve_flags = entry.get("resolve_flags", [])
+        if "website_mismatch" in resolve_flags:
+            score -= 10
+            flags.append("website_mismatch")
+
+        # Manual override (+5)
+        if bfs in MANUAL_OVERRIDE_BFS:
+            score += 5
+            flags.append("manual_override")
+
+        # Signal conflict penalty
+        cls_signals = entry.get("classification_signals")
+        if cls_signals and _has_signal_conflict(cls_signals):
+            score -= 15
+            flags.append("signal_conflict")
+
+        # Gateway flag
+        if entry.get("gateway"):
+            flags.append("provider_via_gateway_spf")
+
+        # Informational flags from signals (no score adjustment —
+        # confidence already incorporates these)
+        cls_signals = cls_signals or []
+        smtp_banner = entry.get("smtp_banner", "")
+        if smtp_banner:
+            smtp_provider = classify_from_smtp_banner(smtp_banner)
+            smtp_in = any(
+                s.get("source") == "smtp" and s.get("provider") == provider
+                for s in cls_signals
+            )
+            if smtp_in:
+                flags.append("smtp_confirms")
+            elif smtp_provider and provider == "independent":
+                flags.append(f"smtp_suggests:{smtp_provider}")
+
+        if entry.get("autodiscover"):
+            ad_in = any(
+                s.get("source") == "autodiscover" and s.get("provider") == provider
+                for s in cls_signals
+            )
+            if ad_in:
+                flags.append("autodiscover_confirms")
+            else:
+                ad_provider = classify_from_autodiscover(entry["autodiscover"])
+                if ad_provider and provider == "independent":
+                    flags.append(f"autodiscover_suggests:{ad_provider}")
+
+        if entry.get("dkim"):
+            dkim_in = any(
+                s.get("source") == "dkim" and s.get("provider") == provider
+                for s in cls_signals
+            )
+            if dkim_in:
+                flags.append("dkim_confirms")
+            else:
+                dkim_provider = classify_from_dkim(entry["dkim"])
+                if dkim_provider and provider in ("independent", "swiss-isp"):
+                    flags.append(f"dkim_suggests:{dkim_provider}")
+
+        if entry.get("tenant_check"):
+            tenant_in = any(
+                s.get("source") == "tenant" and s.get("provider") == provider
+                for s in cls_signals
+            )
+            if tenant_in:
+                flags.append("tenant_confirms")
+            else:
+                tc_provider = next(iter(entry["tenant_check"]), None)
+                if tc_provider and provider in ("independent", "swiss-isp"):
+                    flags.append(f"tenant_suggests:{tc_provider}")
+
+        # Clamp
+        if provider == "unknown":
+            score = min(score, 25)
+        score = max(0, min(100, score))
+
+        return {"score": score, "flags": flags}
     else:
         # Legacy scoring path: compute from scratch
         # Has a domain (+15)

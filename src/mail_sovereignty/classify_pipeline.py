@@ -15,6 +15,12 @@ from mail_sovereignty.constants import (
     CONCURRENCY_SMTP,
     CONCURRENCY_TENANT,
 )
+from mail_sovereignty.evidence import (
+    SIGNAL_GROUP_WEIGHTS,
+    SIGNAL_TO_GROUP,
+    Signal,
+    resolve_provider,
+)
 from mail_sovereignty.dns import (
     lookup_autodiscover,
     lookup_dkim_selectors,
@@ -26,6 +32,27 @@ from mail_sovereignty.dns import (
 )
 from mail_sovereignty.smtp import fetch_smtp_banner
 from mail_sovereignty.tenant import check_microsoft_tenant
+
+
+def recalculate_confidence(entry: dict[str, Any]) -> None:
+    """Reconstruct Signals from classification_signals and update confidence."""
+    raw_signals = entry.get("classification_signals")
+    if not raw_signals:
+        return
+    signals = [
+        Signal(
+            source=s["source"],
+            provider=s.get("provider"),
+            weight=s.get("weight", 0.0),
+            detail=s.get("detail", ""),
+            raw_value="",
+            group=s.get("group", SIGNAL_TO_GROUP.get(s["source"], s["source"])),
+        )
+        for s in raw_signals
+    ]
+    provider, confidence = resolve_provider(signals)
+    entry["provider"] = provider
+    entry["classification_confidence"] = round(confidence * 100, 1)
 
 
 async def classify_municipality(
@@ -154,8 +181,9 @@ async def smtp_banner_batch(
                 smtp_signal = {
                     "source": "smtp",
                     "provider": provider,
-                    "weight": 0.50,
+                    "weight": SIGNAL_GROUP_WEIGHTS["smtp"],
                     "detail": f"SMTP banner matches {provider}",
+                    "group": "smtp",
                 }
                 if "classification_signals" in muni[bfs]:
                     muni[bfs]["classification_signals"].append(smtp_signal)
@@ -220,8 +248,9 @@ async def tenant_check_batch(
             tenant_signal = {
                 "source": "tenant",
                 "provider": "microsoft",
-                "weight": 0.50,
+                "weight": SIGNAL_GROUP_WEIGHTS["tenant"],
                 "detail": f"MS tenant check: {ns_type}",
+                "group": "tenant",
             }
             if "classification_signals" in muni[bfs]:
                 muni[bfs]["classification_signals"].append(tenant_signal)
@@ -278,8 +307,16 @@ async def run(domains_path: Path, output_path: Path) -> None:
     # SMTP banner batch
     await smtp_banner_batch(results)
 
+    # Recalculate confidence after SMTP signals
+    for entry in results.values():
+        recalculate_confidence(entry)
+
     # Tenant check batch
     await tenant_check_batch(results)
+
+    # Recalculate confidence after tenant signals
+    for entry in results.values():
+        recalculate_confidence(entry)
 
     # Final counts
     counts = {}

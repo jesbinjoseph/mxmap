@@ -8,6 +8,7 @@ from mail_sovereignty.constants import (
 from mail_sovereignty.evidence import (
     ClassificationResult,
     Signal,
+    SIGNAL_GROUP_WEIGHTS,
     SIGNAL_WEIGHTS,
     resolve_provider,
 )
@@ -86,9 +87,10 @@ def classify_with_evidence(
                 Signal(
                     source="mx",
                     provider=provider,
-                    weight=SIGNAL_WEIGHTS["mx"],
+                    weight=SIGNAL_GROUP_WEIGHTS["mx"],
                     detail=f"MX hostname matches {provider}",
                     raw_value=mx_blob,
+                    group="mx",
                 )
             )
 
@@ -101,9 +103,10 @@ def classify_with_evidence(
                     Signal(
                         source="mx_cname",
                         provider=provider,
-                        weight=SIGNAL_WEIGHTS["mx_cname"],
+                        weight=SIGNAL_GROUP_WEIGHTS["mx"],
                         detail=f"MX CNAME target matches {provider}",
                         raw_value=cname_blob,
+                        group="mx",
                     )
                 )
 
@@ -115,9 +118,10 @@ def classify_with_evidence(
                 Signal(
                     source="spf",
                     provider=provider,
-                    weight=SIGNAL_WEIGHTS["spf"],
+                    weight=SIGNAL_GROUP_WEIGHTS["spf"],
                     detail=f"SPF record mentions {provider}",
                     raw_value=spf_blob,
+                    group="spf",
                 )
             )
 
@@ -130,9 +134,10 @@ def classify_with_evidence(
                     Signal(
                         source="spf_resolved",
                         provider=provider,
-                        weight=SIGNAL_WEIGHTS["spf_resolved"],
+                        weight=SIGNAL_GROUP_WEIGHTS["spf"],
                         detail=f"Resolved SPF includes mention {provider}",
                         raw_value=resolved_blob,
+                        group="spf",
                     )
                 )
 
@@ -144,9 +149,10 @@ def classify_with_evidence(
                 Signal(
                     source="dkim",
                     provider=dkim_provider,
-                    weight=SIGNAL_WEIGHTS["dkim"],
+                    weight=SIGNAL_GROUP_WEIGHTS["dkim"],
                     detail=f"DKIM CNAME delegates to {dkim_provider}",
                     raw_value=str(dkim),
+                    group="dkim",
                 )
             )
 
@@ -154,20 +160,14 @@ def classify_with_evidence(
     if autodiscover:
         ad_provider = classify_from_autodiscover(autodiscover)
         if ad_provider:
-            # Determine weight based on record type
-            has_cname = any("cname" in k for k in autodiscover)
-            ad_weight = (
-                SIGNAL_WEIGHTS["autodiscover_cname"]
-                if has_cname
-                else SIGNAL_WEIGHTS["autodiscover_srv"]
-            )
             signals.append(
                 Signal(
                     source="autodiscover",
                     provider=ad_provider,
-                    weight=ad_weight,
+                    weight=SIGNAL_GROUP_WEIGHTS["autodiscover"],
                     detail=f"Autodiscover points to {ad_provider}",
                     raw_value=str(autodiscover),
+                    group="autodiscover",
                 )
             )
 
@@ -179,10 +179,11 @@ def classify_with_evidence(
             signals.append(
                 Signal(
                     source="asn",
-                    provider=None,
-                    weight=SIGNAL_WEIGHTS["asn"],
+                    provider="swiss-isp",
+                    weight=SIGNAL_GROUP_WEIGHTS["asn"],
                     detail=f"Swiss ISP: {', '.join(isp_names)}",
                     raw_value=str(sorted(matching_asns)),
+                    group="asn",
                 )
             )
 
@@ -200,12 +201,7 @@ def classify_with_evidence(
     elif not mx_records:
         provider, confidence = "unknown", 0.0
     else:
-        # MX present but no provider match
-        has_swiss_isp = any(s.source == "asn" for s in signals)
-        if has_swiss_isp:
-            provider, confidence = "swiss-isp", 0.0
-        else:
-            provider, confidence = "independent", 0.0
+        provider, confidence = "independent", 0.0
 
     return ClassificationResult(
         provider=provider,

@@ -839,24 +839,26 @@ class TestScoreEntryWithEvidence:
                 "mx": ["bern-ch.mail.protection.outlook.com"],
                 "spf": "v=spf1 include:spf.protection.outlook.com -all",
                 "bfs": "9000",
-                "classification_confidence": 100.0,
+                "classification_confidence": 55.0,
                 "classification_signals": [
                     {
                         "source": "mx",
                         "provider": "microsoft",
-                        "weight": 1.0,
+                        "weight": 0.25,
                         "detail": "MX matches microsoft",
+                        "group": "mx",
                     },
                     {
                         "source": "spf",
                         "provider": "microsoft",
-                        "weight": 0.75,
+                        "weight": 0.30,
                         "detail": "SPF matches microsoft",
+                        "group": "spf",
                     },
                 ],
             }
         )
-        assert result["score"] == 100
+        assert result["score"] == 55
 
     def test_legacy_path_without_confidence(self):
         """Entries without classification_confidence use the old scoring."""
@@ -880,25 +882,27 @@ class TestScoreEntryWithEvidence:
                 "mx": ["mail.protection.outlook.com"],
                 "spf": "v=spf1 include:_spf.google.com -all",
                 "bfs": "9000",
-                "classification_confidence": 80.0,
+                "classification_confidence": 50.0,
                 "classification_signals": [
                     {
                         "source": "mx",
                         "provider": "microsoft",
-                        "weight": 1.0,
+                        "weight": 0.25,
                         "detail": "test",
+                        "group": "mx",
                     },
                     {
                         "source": "spf",
                         "provider": "google",
-                        "weight": 0.75,
+                        "weight": 0.30,
                         "detail": "test",
+                        "group": "spf",
                     },
                 ],
             }
         )
         assert "signal_conflict" in result["flags"]
-        assert result["score"] < 80  # penalty applied
+        assert result["score"] < 50  # penalty applied
 
     def test_no_conflict_penalty_without_signals(self):
         result = score_entry(
@@ -921,19 +925,21 @@ class TestScoreEntryWithEvidence:
                 "spf": "v=spf1 include:spf.protection.outlook.com -all",
                 "bfs": "9000",
                 "smtp_banner": "220 mail.protection.outlook.com Microsoft ESMTP MAIL Service ready",
-                "classification_confidence": 90.0,
+                "classification_confidence": 55.0,
                 "classification_signals": [
                     {
                         "source": "mx",
                         "provider": "microsoft",
-                        "weight": 1.0,
+                        "weight": 0.25,
                         "detail": "test",
+                        "group": "mx",
                     },
                     {
                         "source": "smtp",
                         "provider": "microsoft",
-                        "weight": 0.50,
+                        "weight": 0.06,
                         "detail": "test",
+                        "group": "smtp",
                     },
                 ],
             }
@@ -949,19 +955,21 @@ class TestScoreEntryWithEvidence:
                 "spf": "v=spf1 include:spf.protection.outlook.com -all",
                 "bfs": "9000",
                 "dkim": {"microsoft": "selector1-test._domainkey.test.onmicrosoft.com"},
-                "classification_confidence": 85.0,
+                "classification_confidence": 48.0,
                 "classification_signals": [
                     {
                         "source": "spf",
                         "provider": "microsoft",
-                        "weight": 0.75,
+                        "weight": 0.30,
                         "detail": "test",
+                        "group": "spf",
                     },
                     {
                         "source": "dkim",
                         "provider": "microsoft",
-                        "weight": 0.85,
+                        "weight": 0.18,
                         "detail": "test",
+                        "group": "dkim",
                     },
                 ],
             }
@@ -977,13 +985,14 @@ class TestScoreEntryWithEvidence:
                 "spf": "",
                 "bfs": "9000",
                 "tenant_check": {"microsoft": "Managed"},
-                "classification_confidence": 50.0,
+                "classification_confidence": 6.0,
                 "classification_signals": [
                     {
                         "source": "tenant",
                         "provider": "microsoft",
-                        "weight": 0.50,
+                        "weight": 0.06,
                         "detail": "test",
+                        "group": "tenant",
                     },
                 ],
             }
