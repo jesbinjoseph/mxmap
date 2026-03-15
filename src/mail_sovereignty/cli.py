@@ -16,7 +16,7 @@ def resolve_domains() -> None:
 
 
 def classify_providers() -> None:
-    from mail_sovereignty.classify_pipeline import run
+    from mail_sovereignty.pipeline import run
 
     asyncio.run(run(Path("municipality_domains.json"), Path("data.json")))
 

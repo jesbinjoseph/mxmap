@@ -34,9 +34,7 @@ class TestCli:
             )
 
     def test_classify_providers(self):
-        with patch(
-            "mail_sovereignty.classify_pipeline.run", new_callable=AsyncMock
-        ) as mock_run:
+        with patch("mail_sovereignty.pipeline.run", new_callable=AsyncMock) as mock_run:
             classify_providers()
             mock_run.assert_called_once_with(
                 Path("municipality_domains.json"), Path("data.json")

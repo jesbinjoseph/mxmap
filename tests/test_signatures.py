@@ -1,7 +1,7 @@
-"""Tests for v2 signatures: pattern matching and signature completeness."""
+"""Tests for signatures: pattern matching and signature completeness."""
 
-from mail_sovereignty.v2.models import Provider
-from mail_sovereignty.v2.signatures import (
+from mail_sovereignty.models import Provider
+from mail_sovereignty.signatures import (
     GATEWAY_KEYWORDS,
     SIGNATURES,
     SWISS_ISP_ASNS,

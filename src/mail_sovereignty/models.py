@@ -1,4 +1,4 @@
-"""Pydantic models for the V2 mail sovereignty classifier."""
+"""Pydantic models for the mail sovereignty classifier."""
 
 from __future__ import annotations
 
@@ -46,3 +46,4 @@ class ClassificationResult(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     evidence: list[Evidence] = []
     gateway: str | None = None
+    mx_hosts: list[str] = []

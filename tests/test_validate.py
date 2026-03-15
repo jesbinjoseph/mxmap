@@ -885,18 +885,28 @@ class TestScoreEntryWithEvidence:
                 "classification_confidence": 50.0,
                 "classification_signals": [
                     {
-                        "source": "mx",
+                        "kind": "mx",
                         "provider": "microsoft",
-                        "weight": 0.25,
+                        "weight": 0.20,
                         "detail": "test",
-                        "group": "mx",
                     },
                     {
-                        "source": "spf",
-                        "provider": "google",
-                        "weight": 0.30,
+                        "kind": "dkim",
+                        "provider": "microsoft",
+                        "weight": 0.15,
                         "detail": "test",
-                        "group": "spf",
+                    },
+                    {
+                        "kind": "spf",
+                        "provider": "google",
+                        "weight": 0.20,
+                        "detail": "test",
+                    },
+                    {
+                        "kind": "dkim",
+                        "provider": "google",
+                        "weight": 0.15,
+                        "detail": "test",
                     },
                 ],
             }
@@ -1012,3 +1022,216 @@ class TestScoreEntryWithEvidence:
             }
         )
         assert result["score"] <= 25
+
+    def test_evidence_multi_source_agreement(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "bern.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 55.0,
+                "classification_signals": [],
+                "sources_detail": {
+                    "scrape": ["bern.ch"],
+                    "wikidata": ["bern.ch"],
+                },
+            }
+        )
+        assert "multi_source_agreement" in result["flags"]
+        assert result["score"] == 60
+
+    def test_evidence_website_mismatch(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 55.0,
+                "classification_signals": [],
+                "resolve_flags": ["website_mismatch"],
+            }
+        )
+        assert "website_mismatch" in result["flags"]
+        assert result["score"] == 45
+
+    def test_evidence_manual_override(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "ne.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "6404",
+                "classification_confidence": 55.0,
+                "classification_signals": [],
+            }
+        )
+        assert "manual_override" in result["flags"]
+        assert result["score"] == 60
+
+    def test_evidence_gateway_flag(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 55.0,
+                "classification_signals": [],
+                "gateway": "seppmail",
+            }
+        )
+        assert "provider_via_gateway_spf" in result["flags"]
+
+    def test_evidence_smtp_suggests(self):
+        result = score_entry(
+            {
+                "provider": "independent",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 10.0,
+                "classification_signals": [],
+                "smtp_banner": "220 mail.protection.outlook.com Microsoft ESMTP MAIL Service ready",
+            }
+        )
+        assert "smtp_suggests:microsoft" in result["flags"]
+
+    def test_evidence_autodiscover_confirms(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 55.0,
+                "classification_signals": [
+                    {
+                        "kind": "autodiscover",
+                        "provider": "microsoft",
+                        "weight": 0.05,
+                        "detail": "test",
+                    },
+                ],
+                "autodiscover": {"autodiscover_cname": "autodiscover.outlook.com"},
+            }
+        )
+        assert "autodiscover_confirms" in result["flags"]
+
+    def test_evidence_autodiscover_suggests(self):
+        result = score_entry(
+            {
+                "provider": "independent",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 10.0,
+                "classification_signals": [],
+                "autodiscover": {"autodiscover_cname": "autodiscover.outlook.com"},
+            }
+        )
+        assert "autodiscover_suggests:microsoft" in result["flags"]
+
+    def test_evidence_dkim_confirms(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 55.0,
+                "classification_signals": [
+                    {
+                        "kind": "dkim",
+                        "provider": "microsoft",
+                        "weight": 0.15,
+                        "detail": "test",
+                    },
+                ],
+                "dkim": {"microsoft": "selector1._domainkey.test.onmicrosoft.com"},
+            }
+        )
+        assert "dkim_confirms" in result["flags"]
+
+    def test_evidence_dkim_suggests(self):
+        result = score_entry(
+            {
+                "provider": "independent",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 10.0,
+                "classification_signals": [],
+                "dkim": {"microsoft": "selector1._domainkey.test.onmicrosoft.com"},
+            }
+        )
+        assert "dkim_suggests:microsoft" in result["flags"]
+
+    def test_evidence_tenant_confirms(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 55.0,
+                "classification_signals": [
+                    {
+                        "kind": "tenant",
+                        "provider": "microsoft",
+                        "weight": 0.10,
+                        "detail": "test",
+                    },
+                ],
+                "tenant_check": {"microsoft": "Managed"},
+            }
+        )
+        assert "tenant_confirms" in result["flags"]
+
+    def test_evidence_tenant_suggests(self):
+        result = score_entry(
+            {
+                "provider": "independent",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 10.0,
+                "classification_signals": [],
+                "tenant_check": {"microsoft": "Managed"},
+            }
+        )
+        assert "tenant_suggests:microsoft" in result["flags"]
+
+    def test_evidence_smtp_confirms(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 55.0,
+                "classification_signals": [
+                    {
+                        "kind": "smtp",
+                        "provider": "microsoft",
+                        "weight": 0.10,
+                        "detail": "test",
+                    },
+                ],
+                "smtp_banner": "220 mail.protection.outlook.com Microsoft ESMTP",
+            }
+        )
+        assert "smtp_confirms" in result["flags"]

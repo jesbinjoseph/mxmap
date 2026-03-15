@@ -1,4 +1,4 @@
-"""Tests for v2 DNS probes with mocked resolver."""
+"""Tests for DNS probes with mocked resolver."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,8 +8,8 @@ import dns.name
 import dns.rdatatype
 import pytest
 
-from mail_sovereignty.v2.models import Provider, SignalKind
-from mail_sovereignty.v2.probes import (
+from mail_sovereignty.models import Provider, SignalKind
+from mail_sovereignty.probes import (
     WEIGHTS,
     detect_gateway,
     probe_asn,
@@ -88,27 +88,21 @@ class TestProbeMx:
 
     async def test_google_hit(self):
         resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _mx_rdata("aspmx.l.google.com.")
-        ]
+        resolver.resolve.return_value = [_mx_rdata("aspmx.l.google.com.")]
         results = await probe_mx("example.com", resolver)
         assert len(results) == 1
         assert results[0].provider == Provider.GOOGLE
 
     async def test_infomaniak_hit(self):
         resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _mx_rdata("mxpool.infomaniak.com.")
-        ]
+        resolver.resolve.return_value = [_mx_rdata("mxpool.infomaniak.com.")]
         results = await probe_mx("example.com", resolver)
         assert len(results) == 1
         assert results[0].provider == Provider.INFOMANIAK
 
     async def test_smtp_google_hit(self):
         resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _mx_rdata("smtp.google.com.")
-        ]
+        resolver.resolve.return_value = [_mx_rdata("smtp.google.com.")]
         results = await probe_mx("example.com", resolver)
         assert len(results) == 1
         assert results[0].provider == Provider.GOOGLE
@@ -163,9 +157,7 @@ class TestProbeSpf:
 
     async def test_no_spf_record(self):
         resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("google-site-verification=abc123")
-        ]
+        resolver.resolve.return_value = [_txt_rdata("google-site-verification=abc123")]
         results = await probe_spf("example.com", resolver)
         assert results == []
 
@@ -218,9 +210,7 @@ class TestProbeDmarc:
     async def test_ms365_hit(self):
         resolver = _mock_resolver()
         resolver.resolve.return_value = [
-            _txt_rdata(
-                "v=DMARC1; p=reject; rua=mailto:dmarc@rua.agari.com"
-            )
+            _txt_rdata("v=DMARC1; p=reject; rua=mailto:dmarc@rua.agari.com")
         ]
         results = await probe_dmarc("example.com", resolver)
         assert len(results) == 1
@@ -302,9 +292,7 @@ class TestProbeCnameChain:
     async def test_no_cname(self):
         resolver = _mock_resolver()
         resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_cname_chain(
-            "example.com", ["mx.example.com"], resolver
-        )
+        results = await probe_cname_chain("example.com", ["mx.example.com"], resolver)
         assert results == []
 
     async def test_empty_mx_hosts(self):
@@ -351,22 +339,31 @@ class TestProbeSmtp:
         mock_writer.close = MagicMock()
         mock_writer.wait_closed = AsyncMock()
 
-        readline_calls = iter([
-            b"220 mail.protection.outlook.com Microsoft ESMTP MAIL Service ready\r\n",
-            b"250 OK\r\n",
-            b"221 Bye\r\n",
-        ])
+        readline_calls = iter(
+            [
+                b"220 mail.protection.outlook.com Microsoft ESMTP MAIL Service ready\r\n",
+                b"250 OK\r\n",
+                b"221 Bye\r\n",
+            ]
+        )
         mock_reader.readline = AsyncMock(side_effect=lambda: next(readline_calls))
 
-        with patch("mail_sovereignty.v2.probes.asyncio.open_connection", new=AsyncMock(return_value=(mock_reader, mock_writer))):
-            with patch("mail_sovereignty.v2.probes.asyncio.wait_for") as mock_wait:
+        with patch(
+            "mail_sovereignty.probes.asyncio.open_connection",
+            new=AsyncMock(return_value=(mock_reader, mock_writer)),
+        ):
+            with patch("mail_sovereignty.probes.asyncio.wait_for") as mock_wait:
+
                 async def wait_for_impl(coro, timeout):
                     return await coro
+
                 mock_wait.side_effect = wait_for_impl
                 results = await probe_smtp(["mx.example.com"])
 
         assert len(results) >= 1
-        assert any(e.provider == Provider.MS365 and e.kind == SignalKind.SMTP for e in results)
+        assert any(
+            e.provider == Provider.MS365 and e.kind == SignalKind.SMTP for e in results
+        )
 
     async def test_google_banner(self):
         mock_reader = AsyncMock()
@@ -375,45 +372,75 @@ class TestProbeSmtp:
         mock_writer.close = MagicMock()
         mock_writer.wait_closed = AsyncMock()
 
-        readline_calls = iter([
-            b"220 mx.google.com ESMTP ready\r\n",
-            b"250 mx.google.com at your service\r\n",
-            b"221 Bye\r\n",
-        ])
+        readline_calls = iter(
+            [
+                b"220 mx.google.com ESMTP ready\r\n",
+                b"250 mx.google.com at your service\r\n",
+                b"221 Bye\r\n",
+            ]
+        )
         mock_reader.readline = AsyncMock(side_effect=lambda: next(readline_calls))
 
-        with patch("mail_sovereignty.v2.probes.asyncio.open_connection", new=AsyncMock(return_value=(mock_reader, mock_writer))):
-            with patch("mail_sovereignty.v2.probes.asyncio.wait_for") as mock_wait:
+        with patch(
+            "mail_sovereignty.probes.asyncio.open_connection",
+            new=AsyncMock(return_value=(mock_reader, mock_writer)),
+        ):
+            with patch("mail_sovereignty.probes.asyncio.wait_for") as mock_wait:
+
                 async def wait_for_impl(coro, timeout):
                     return await coro
+
                 mock_wait.side_effect = wait_for_impl
                 results = await probe_smtp(["mx.google.com"])
 
-        assert any(e.provider == Provider.GOOGLE and e.kind == SignalKind.SMTP for e in results)
+        assert any(
+            e.provider == Provider.GOOGLE and e.kind == SignalKind.SMTP for e in results
+        )
 
     async def test_empty_mx_hosts(self):
         results = await probe_smtp([])
         assert results == []
 
     async def test_connection_failure(self):
-        with patch("mail_sovereignty.v2.probes.asyncio.open_connection", side_effect=OSError("Connection refused")):
-            with patch("mail_sovereignty.v2.probes.asyncio.wait_for", side_effect=OSError("Connection refused")):
-                results = await probe_smtp(["mx.example.com"])
+        def raise_oserror(*args, **kwargs):
+            raise OSError("Connection refused")
+
+        with patch(
+            "mail_sovereignty.probes.asyncio.open_connection",
+            new=raise_oserror,
+        ):
+            results = await probe_smtp(["mx.example.com"])
         assert results == []
 
 
-class TestProbeTenant:
-    async def test_managed_tenant(self):
-        with patch("mail_sovereignty.v2.probes.httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+class _FakeAsyncClient:
+    """Minimal async context manager that avoids AsyncMock unawaited-coroutine warnings."""
 
+    def __init__(self, mock_client):
+        self._client = mock_client
+
+    async def __aenter__(self):
+        return self._client
+
+    async def __aexit__(self, *args):
+        pass
+
+
+class TestProbeTenant:
+    def _mock_tenant_client(self, *, json_data=None, side_effect=None):
+        mock_client = MagicMock()
+        if side_effect:
+            mock_client.get = AsyncMock(side_effect=side_effect)
+        else:
             mock_response = MagicMock()
-            mock_response.json.return_value = {"NameSpaceType": "Managed"}
+            mock_response.json.return_value = json_data
             mock_response.raise_for_status = MagicMock()
             mock_client.get = AsyncMock(return_value=mock_response)
+        return _FakeAsyncClient(mock_client)
 
+    async def test_managed_tenant(self):
+        mock_cm = self._mock_tenant_client(json_data={"NameSpaceType": "Managed"})
+        with patch("mail_sovereignty.probes.httpx.AsyncClient", return_value=mock_cm):
             results = await probe_tenant("example.com")
 
         assert len(results) == 1
@@ -422,43 +449,25 @@ class TestProbeTenant:
         assert results[0].raw == "Managed"
 
     async def test_federated_tenant(self):
-        with patch("mail_sovereignty.v2.probes.httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
-
-            mock_response = MagicMock()
-            mock_response.json.return_value = {"NameSpaceType": "Federated"}
-            mock_response.raise_for_status = MagicMock()
-            mock_client.get = AsyncMock(return_value=mock_response)
-
+        mock_cm = self._mock_tenant_client(json_data={"NameSpaceType": "Federated"})
+        with patch("mail_sovereignty.probes.httpx.AsyncClient", return_value=mock_cm):
             results = await probe_tenant("example.com")
 
         assert len(results) == 1
         assert results[0].raw == "Federated"
 
     async def test_no_tenant(self):
-        with patch("mail_sovereignty.v2.probes.httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
-
-            mock_response = MagicMock()
-            mock_response.json.return_value = {"NameSpaceType": "Unknown"}
-            mock_response.raise_for_status = MagicMock()
-            mock_client.get = AsyncMock(return_value=mock_response)
-
+        mock_cm = self._mock_tenant_client(json_data={"NameSpaceType": "Unknown"})
+        with patch("mail_sovereignty.probes.httpx.AsyncClient", return_value=mock_cm):
             results = await probe_tenant("example.com")
 
         assert results == []
 
     async def test_http_error(self):
-        with patch("mail_sovereignty.v2.probes.httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
-            mock_client.get = AsyncMock(side_effect=Exception("Connection error"))
-
+        mock_cm = self._mock_tenant_client(
+            side_effect=Exception("Connection error")
+        )
+        with patch("mail_sovereignty.probes.httpx.AsyncClient", return_value=mock_cm):
             results = await probe_tenant("example.com")
 
         assert results == []
@@ -477,7 +486,9 @@ class TestProbeAsn:
 
         resolver.resolve.side_effect = _resolve
         results = await probe_asn(["mx.outlook.com"], resolver)
-        assert any(e.provider == Provider.MS365 and e.kind == SignalKind.ASN for e in results)
+        assert any(
+            e.provider == Provider.MS365 and e.kind == SignalKind.ASN for e in results
+        )
 
     async def test_swiss_isp_asn(self):
         resolver = _mock_resolver()
@@ -492,7 +503,8 @@ class TestProbeAsn:
         resolver.resolve.side_effect = _resolve
         results = await probe_asn(["mx.swisscom.ch"], resolver)
         assert any(
-            e.provider == Provider.SWISS_ISP and e.kind == SignalKind.ASN for e in results
+            e.provider == Provider.SWISS_ISP and e.kind == SignalKind.ASN
+            for e in results
         )
         assert any("Swisscom" in e.detail for e in results)
 
@@ -519,7 +531,10 @@ class TestProbeTxtVerification:
 
         resolver.resolve.side_effect = _resolve
         results = await probe_txt_verification("example.com", resolver)
-        assert any(e.provider == Provider.MS365 and e.kind == SignalKind.TXT_VERIFICATION for e in results)
+        assert any(
+            e.provider == Provider.MS365 and e.kind == SignalKind.TXT_VERIFICATION
+            for e in results
+        )
 
     async def test_google_verification(self):
         resolver = _mock_resolver()
@@ -531,7 +546,10 @@ class TestProbeTxtVerification:
 
         resolver.resolve.side_effect = _resolve
         results = await probe_txt_verification("example.com", resolver)
-        assert any(e.provider == Provider.GOOGLE and e.kind == SignalKind.TXT_VERIFICATION for e in results)
+        assert any(
+            e.provider == Provider.GOOGLE and e.kind == SignalKind.TXT_VERIFICATION
+            for e in results
+        )
 
     async def test_aws_ses_verification(self):
         resolver = _mock_resolver()
@@ -543,7 +561,10 @@ class TestProbeTxtVerification:
 
         resolver.resolve.side_effect = _resolve
         results = await probe_txt_verification("example.com", resolver)
-        assert any(e.provider == Provider.AWS and e.kind == SignalKind.TXT_VERIFICATION for e in results)
+        assert any(
+            e.provider == Provider.AWS and e.kind == SignalKind.TXT_VERIFICATION
+            for e in results
+        )
 
     async def test_no_verification(self):
         resolver = _mock_resolver()

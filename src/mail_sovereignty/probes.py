@@ -44,9 +44,7 @@ def _make_resolver() -> dns.asyncresolver.Resolver:
     return resolver
 
 
-async def probe_mx(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_mx(domain: str, resolver: dns.asyncresolver.Resolver) -> list[Evidence]:
     """Query MX records and match hostnames against provider patterns."""
     results: list[Evidence] = []
     try:

@@ -27,12 +27,21 @@ _PRIMARY_KINDS = frozenset({SignalKind.MX, SignalKind.SPF, SignalKind.DKIM})
 
 
 def _aggregate(
-    evidence: list[Evidence], *, gateway: str | None = None
+    evidence: list[Evidence],
+    *,
+    gateway: str | None = None,
+    mx_hosts: list[str] | None = None,
 ) -> ClassificationResult:
     """Score providers by weighted, deduplicated evidence signals."""
+    _mx_hosts = mx_hosts or []
+
     if not evidence:
         return ClassificationResult(
-            provider=Provider.INDEPENDENT, confidence=0.0, evidence=[], gateway=gateway
+            provider=Provider.INDEPENDENT,
+            confidence=0.0,
+            evidence=[],
+            gateway=gateway,
+            mx_hosts=_mx_hosts,
         )
 
     # Confirmation-only filtering: collect which providers have primary signals
@@ -59,6 +68,7 @@ def _aggregate(
             confidence=0.0,
             evidence=list(evidence),
             gateway=gateway,
+            mx_hosts=_mx_hosts,
         )
 
     # Sum weights per provider
@@ -79,6 +89,7 @@ def _aggregate(
         confidence=confidence,
         evidence=all_deduped,
         gateway=gateway,
+        mx_hosts=_mx_hosts,
     )
 
 
@@ -128,7 +139,7 @@ async def classify(domain: str) -> ClassificationResult:
         + asn_ev
         + txt_ev
     )
-    return _aggregate(all_evidence, gateway=gateway)
+    return _aggregate(all_evidence, gateway=gateway, mx_hosts=mx_hosts)
 
 
 async def classify_many(

@@ -1,9 +1,9 @@
-"""Tests for v2 models: enums, Pydantic models, validation."""
+"""Tests for models: enums, Pydantic models, validation."""
 
 import pytest
 from pydantic import ValidationError
 
-from mail_sovereignty.v2.models import (
+from mail_sovereignty.models import (
     ClassificationResult,
     Evidence,
     Provider,
@@ -103,10 +103,13 @@ class TestEvidence:
         assert e == e2
 
     def test_new_signal_kinds(self):
-        for kind in (SignalKind.SMTP, SignalKind.TENANT, SignalKind.ASN, SignalKind.TXT_VERIFICATION):
-            e = Evidence(
-                kind=kind, provider=Provider.MS365, weight=0.10, detail="test"
-            )
+        for kind in (
+            SignalKind.SMTP,
+            SignalKind.TENANT,
+            SignalKind.ASN,
+            SignalKind.TXT_VERIFICATION,
+        ):
+            e = Evidence(kind=kind, provider=Provider.MS365, weight=0.10, detail="test")
             assert e.kind == kind
 
 
@@ -127,34 +130,37 @@ class TestClassificationResult:
         assert r.gateway == "seppmail"
 
     def test_gateway_default_none(self):
-        r = ClassificationResult(
-            provider=Provider.MS365, confidence=0.5, evidence=[]
-        )
+        r = ClassificationResult(provider=Provider.MS365, confidence=0.5, evidence=[])
         assert r.gateway is None
 
     def test_immutability(self):
-        r = ClassificationResult(
-            provider=Provider.MS365, confidence=0.5, evidence=[]
-        )
+        r = ClassificationResult(provider=Provider.MS365, confidence=0.5, evidence=[])
         with pytest.raises(ValidationError):
             r.confidence = 0.9
 
     def test_confidence_bounds(self):
         with pytest.raises(ValidationError):
-            ClassificationResult(
-                provider=Provider.MS365, confidence=1.5, evidence=[]
-            )
+            ClassificationResult(provider=Provider.MS365, confidence=1.5, evidence=[])
         with pytest.raises(ValidationError):
-            ClassificationResult(
-                provider=Provider.MS365, confidence=-0.1, evidence=[]
-            )
+            ClassificationResult(provider=Provider.MS365, confidence=-0.1, evidence=[])
 
     def test_with_evidence(self):
         e = Evidence(
             kind=SignalKind.MX, provider=Provider.MS365, weight=0.30, detail="test"
         )
-        r = ClassificationResult(
-            provider=Provider.MS365, confidence=0.30, evidence=[e]
-        )
+        r = ClassificationResult(provider=Provider.MS365, confidence=0.30, evidence=[e])
         assert len(r.evidence) == 1
         assert r.evidence[0].kind == SignalKind.MX
+
+    def test_mx_hosts_field(self):
+        r = ClassificationResult(
+            provider=Provider.MS365,
+            confidence=0.5,
+            evidence=[],
+            mx_hosts=["mx1.example.com", "mx2.example.com"],
+        )
+        assert r.mx_hosts == ["mx1.example.com", "mx2.example.com"]
+
+    def test_mx_hosts_default_empty(self):
+        r = ClassificationResult(provider=Provider.MS365, confidence=0.5, evidence=[])
+        assert r.mx_hosts == []

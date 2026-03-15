@@ -5,15 +5,19 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from mail_sovereignty.classify import (
-    classify_from_autodiscover,
-    classify_from_dkim,
-    classify_from_mx,
-    classify_from_smtp_banner,
-    classify_from_spf,
-    spf_mentions_providers,
+from mail_sovereignty.pipeline import PROVIDER_OUTPUT_NAMES
+from mail_sovereignty.probes import WEIGHTS
+from mail_sovereignty.signatures import (
+    GATEWAY_KEYWORDS,
+    SIGNATURES,
+    match_patterns,
 )
-from mail_sovereignty.constants import GATEWAY_KEYWORDS, PROVIDER_KEYWORDS
+
+
+def _map_provider_name(provider_value: str) -> str:
+    """Map internal provider value to output name (e.g. 'ms365' -> 'microsoft')."""
+    return PROVIDER_OUTPUT_NAMES.get(provider_value, provider_value)
+
 
 # Quality gate thresholds (override via env vars in CI)
 MIN_AVERAGE_SCORE = int(os.environ.get("MIN_AVERAGE_SCORE", "70"))
@@ -35,6 +39,81 @@ MANUAL_OVERRIDE_BFS = _load_override_bfs()
 
 
 POTENTIAL_GATEWAY_THRESHOLD = 5
+
+
+# ── Inline helpers using signatures.py ──────────────────────────────
+
+
+def _match_provider_from_mx(mx_records: list[str]) -> str | None:
+    """Match MX records against provider signatures."""
+    if not mx_records:
+        return None
+    for mx in mx_records:
+        for sig in SIGNATURES:
+            if match_patterns(mx, sig.mx_patterns):
+                return _map_provider_name(sig.provider.value)
+    return "independent"
+
+
+def _match_provider_from_spf(spf_record: str) -> str | None:
+    """Match SPF record against provider SPF includes."""
+    if not spf_record:
+        return None
+    lower = spf_record.lower()
+    for sig in SIGNATURES:
+        for include in sig.spf_includes:
+            if include.lower() in lower:
+                return _map_provider_name(sig.provider.value)
+    return None
+
+
+def _spf_mentions_providers(spf_record: str) -> set[str]:
+    """Return set of provider names mentioned in SPF."""
+    if not spf_record:
+        return set()
+    lower = spf_record.lower()
+    found = set()
+    for sig in SIGNATURES:
+        for include in sig.spf_includes:
+            if include.lower() in lower:
+                found.add(_map_provider_name(sig.provider.value))
+    return found
+
+
+def _match_provider_from_smtp_banner(banner: str, ehlo: str = "") -> str | None:
+    """Classify provider from SMTP banner/EHLO."""
+    if not banner and not ehlo:
+        return None
+    blob = f"{banner} {ehlo}".lower()
+    for sig in SIGNATURES:
+        if match_patterns(blob, sig.smtp_banner_patterns):
+            return _map_provider_name(sig.provider.value)
+    return None
+
+
+def _match_provider_from_autodiscover(
+    autodiscover: dict[str, str] | None,
+) -> str | None:
+    """Classify provider from autodiscover DNS records."""
+    if not autodiscover:
+        return None
+    blob = " ".join(autodiscover.values()).lower()
+    for sig in SIGNATURES:
+        if match_patterns(blob, sig.autodiscover_patterns):
+            return _map_provider_name(sig.provider.value)
+    return None
+
+
+def _match_provider_from_dkim(dkim: dict[str, str] | None) -> str | None:
+    """Classify provider from DKIM selector CNAME records."""
+    if not dkim:
+        return None
+    for provider in dkim:
+        return provider
+    return None
+
+
+# ── Gateway detection ──────────────────────────────────────────────
 
 
 def _detect_potential_gateways(
@@ -87,44 +166,49 @@ def _detect_potential_gateways(
     return results
 
 
+# ── Signal conflict detection ──────────────────────────────────────
+
+
 def _has_signal_conflict(classification_signals: list[dict]) -> bool:
     """Check if classification signals contain conflicting providers.
 
-    Uses group-based deduplication: each group counted at most once per
-    provider.  Conflict if two providers both have total >= 0.20.
+    Uses kind-based deduplication: each kind counted at most once per
+    provider. Conflict if two providers both have total >= 0.20.
     """
-    from mail_sovereignty.evidence import SIGNAL_GROUP_WEIGHTS, SIGNAL_TO_GROUP
+    # Build weight lookup from v2 WEIGHTS
+    kind_weights: dict[str, float] = {k.value: v for k, v in WEIGHTS.items()}
 
-    provider_groups: dict[str, dict[str, float]] = {}
+    provider_kinds: dict[str, dict[str, float]] = {}
     for sig in classification_signals:
         p = sig.get("provider")
         if p is None:
             continue
-        group = sig.get("group", SIGNAL_TO_GROUP.get(sig["source"], sig["source"]))
-        group_weight = SIGNAL_GROUP_WEIGHTS.get(group, 0.0)
-        groups = provider_groups.setdefault(p, {})
-        groups[group] = max(groups.get(group, 0.0), group_weight)
+        kind = sig.get("kind", sig.get("source", ""))
+        kind_weight = kind_weights.get(kind, 0.0)
+        kinds = provider_kinds.setdefault(p, {})
+        kinds[kind] = max(kinds.get(kind, 0.0), kind_weight)
 
     provider_totals = {
-        p: sum(weights.values()) for p, weights in provider_groups.items()
+        p: sum(weights.values()) for p, weights in provider_kinds.items()
     }
     high_weight_providers = [p for p, w in provider_totals.items() if w > 0.20]
     return len(high_weight_providers) >= 2
+
+
+# ── Scoring ─────────────────────────────────────────────────────────
 
 
 def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     """Score a municipality entry 0-100 with explanatory flags."""
     provider = entry.get("provider", "unknown")
     domain = entry.get("domain", "")
-    mx = entry.get("mx", [])
-    spf = entry.get("spf", "")
     bfs = entry.get("bfs", "")
 
     # Merged entries: automatically 100
     if provider == "merged":
         return {"score": 100, "flags": ["merged_municipality"]}
 
-    # Use classification_confidence as base score when available
+    # Use classification_confidence as base score
     classification_confidence = entry.get("classification_confidence")
 
     score = 0
@@ -139,7 +223,9 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
         if sources_detail:
             domain_val = entry.get("domain", "")
             agreeing_sources = sum(
-                1 for src_domains in sources_detail.values() if domain_val in src_domains
+                1
+                for src_domains in sources_detail.values()
+                if domain_val in src_domains
             )
             if agreeing_sources >= 2:
                 score += 5
@@ -171,9 +257,10 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
         cls_signals = cls_signals or []
         smtp_banner = entry.get("smtp_banner", "")
         if smtp_banner:
-            smtp_provider = classify_from_smtp_banner(smtp_banner)
+            smtp_provider = _match_provider_from_smtp_banner(smtp_banner)
             smtp_in = any(
-                s.get("source") == "smtp" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "smtp"
+                and s.get("provider") == provider
                 for s in cls_signals
             )
             if smtp_in:
@@ -183,31 +270,34 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
 
         if entry.get("autodiscover"):
             ad_in = any(
-                s.get("source") == "autodiscover" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "autodiscover"
+                and s.get("provider") == provider
                 for s in cls_signals
             )
             if ad_in:
                 flags.append("autodiscover_confirms")
             else:
-                ad_provider = classify_from_autodiscover(entry["autodiscover"])
+                ad_provider = _match_provider_from_autodiscover(entry["autodiscover"])
                 if ad_provider and provider == "independent":
                     flags.append(f"autodiscover_suggests:{ad_provider}")
 
         if entry.get("dkim"):
             dkim_in = any(
-                s.get("source") == "dkim" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "dkim"
+                and s.get("provider") == provider
                 for s in cls_signals
             )
             if dkim_in:
                 flags.append("dkim_confirms")
             else:
-                dkim_provider = classify_from_dkim(entry["dkim"])
+                dkim_provider = _match_provider_from_dkim(entry["dkim"])
                 if dkim_provider and provider in ("independent", "swiss-isp"):
                     flags.append(f"dkim_suggests:{dkim_provider}")
 
         if entry.get("tenant_check"):
             tenant_in = any(
-                s.get("source") == "tenant" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "tenant"
+                and s.get("provider") == provider
                 for s in cls_signals
             )
             if tenant_in:
@@ -225,6 +315,9 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
         return {"score": score, "flags": flags}
     else:
         # Legacy scoring path: compute from scratch
+        mx = entry.get("mx", [])
+        spf = entry.get("spf", "")
+
         # Has a domain (+15)
         if domain:
             score += 15
@@ -253,9 +346,9 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
             flags.append("no_spf")
 
         # Cross-validate MX vs SPF provider
-        mx_provider = classify_from_mx(mx)
-        spf_provider = classify_from_spf(spf)
-        spf_providers = spf_mentions_providers(spf)
+        mx_provider = _match_provider_from_mx(mx)
+        spf_provider = _match_provider_from_spf(spf)
+        spf_providers = _spf_mentions_providers(spf)
 
         if mx_provider and spf_provider:
             if mx_provider == spf_provider:
@@ -275,8 +368,7 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
             flags.append("mx_spf_match")
 
         # SPF mentions multiple main providers (-10)
-        main_spf_providers = spf_providers & set(PROVIDER_KEYWORDS.keys())
-        if len(main_spf_providers) >= 2:
+        if len(spf_providers) >= 2:
             score -= 10
             flags.append(f"multi_provider_spf:{'+'.join(sorted(spf_providers))}")
 
@@ -298,10 +390,10 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
             mx_blob = " ".join(mx).lower()
             cname_blob = " ".join(mx_cnames.values()).lower()
             mx_matches_provider = any(
-                any(k in mx_blob for k in kws) for kws in PROVIDER_KEYWORDS.values()
+                match_patterns(mx_blob, sig.mx_patterns) for sig in SIGNATURES
             )
             cname_matches_provider = any(
-                any(k in cname_blob for k in kws) for kws in PROVIDER_KEYWORDS.values()
+                match_patterns(cname_blob, sig.cname_patterns) for sig in SIGNATURES
             )
             if not mx_matches_provider and cname_matches_provider:
                 flags.append("provider_via_cname")
@@ -314,11 +406,11 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     classification_signals = entry.get("classification_signals")
     smtp_banner = entry.get("smtp_banner", "")
     if smtp_banner:
-        smtp_provider = classify_from_smtp_banner(smtp_banner)
+        smtp_provider = _match_provider_from_smtp_banner(smtp_banner)
         if classification_signals is not None:
-            # Source confirmation from signals
             smtp_in_signals = any(
-                s.get("source") == "smtp" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "smtp"
+                and s.get("provider") == provider
                 for s in classification_signals
             )
             if smtp_in_signals:
@@ -338,18 +430,19 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     if autodiscover:
         if classification_signals is not None:
             ad_in_signals = any(
-                s.get("source") == "autodiscover" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "autodiscover"
+                and s.get("provider") == provider
                 for s in classification_signals
             )
             if ad_in_signals:
                 score += 5
                 flags.append("autodiscover_confirms")
             else:
-                ad_provider = classify_from_autodiscover(autodiscover)
+                ad_provider = _match_provider_from_autodiscover(autodiscover)
                 if ad_provider and provider == "independent":
                     flags.append(f"autodiscover_suggests:{ad_provider}")
         else:
-            ad_provider = classify_from_autodiscover(autodiscover)
+            ad_provider = _match_provider_from_autodiscover(autodiscover)
             if ad_provider and ad_provider == provider:
                 score += 5
                 flags.append("autodiscover_confirms")
@@ -361,18 +454,19 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     if dkim:
         if classification_signals is not None:
             dkim_in_signals = any(
-                s.get("source") == "dkim" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "dkim"
+                and s.get("provider") == provider
                 for s in classification_signals
             )
             if dkim_in_signals:
                 score += 5
                 flags.append("dkim_confirms")
             else:
-                dkim_provider = classify_from_dkim(dkim)
+                dkim_provider = _match_provider_from_dkim(dkim)
                 if dkim_provider and provider in ("independent", "swiss-isp"):
                     flags.append(f"dkim_suggests:{dkim_provider}")
         else:
-            dkim_provider = classify_from_dkim(dkim)
+            dkim_provider = _match_provider_from_dkim(dkim)
             if dkim_provider and dkim_provider == provider:
                 score += 5
                 flags.append("dkim_confirms")
@@ -384,7 +478,8 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     if tenant_check:
         if classification_signals is not None:
             tenant_in_signals = any(
-                s.get("source") == "tenant" and s.get("provider") == provider
+                s.get("kind", s.get("source")) == "tenant"
+                and s.get("provider") == provider
                 for s in classification_signals
             )
             if tenant_in_signals:
@@ -510,8 +605,8 @@ def print_report(scored_entries: list[dict[str, Any]]) -> None:
         for e in sorted(mismatched, key=lambda x: x["score"]):
             print(
                 f"    {e['bfs']:>5}  {e['name']:<30} "
-                f"mx_provider={classify_from_mx(e.get('mx_raw', []))} "
-                f"spf_provider={classify_from_spf(e.get('spf_raw', ''))}"
+                f"mx_provider={_match_provider_from_mx(e.get('mx_raw', []))} "
+                f"spf_provider={_match_provider_from_spf(e.get('spf_raw', ''))}"
             )
 
     potential_gateways = _detect_potential_gateways(scored_entries)

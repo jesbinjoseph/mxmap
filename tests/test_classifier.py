@@ -1,17 +1,16 @@
-"""Tests for v2 classifier: _aggregate and classify."""
+"""Tests for classifier: _aggregate, classify, and classify_many."""
 
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from mail_sovereignty.v2.classifier import _aggregate, classify
-from mail_sovereignty.v2.models import (
-    ClassificationResult,
+from mail_sovereignty.classifier import _aggregate, classify, classify_many
+from mail_sovereignty.models import (
     Evidence,
     Provider,
     SignalKind,
 )
-from mail_sovereignty.v2.probes import WEIGHTS
+from mail_sovereignty.probes import WEIGHTS
 
 
 def _ev(kind: SignalKind, provider: Provider, weight: float | None = None) -> Evidence:
@@ -25,9 +24,16 @@ def _ev(kind: SignalKind, provider: Provider, weight: float | None = None) -> Ev
 def _patch_all_probes(**overrides):
     """Return a context manager that patches all probes with defaults (empty lists)."""
     probe_names = [
-        "probe_mx", "probe_spf", "probe_dkim", "probe_dmarc",
-        "probe_autodiscover", "probe_cname_chain", "probe_smtp",
-        "probe_tenant", "probe_asn", "probe_txt_verification",
+        "probe_mx",
+        "probe_spf",
+        "probe_dkim",
+        "probe_dmarc",
+        "probe_autodiscover",
+        "probe_cname_chain",
+        "probe_smtp",
+        "probe_tenant",
+        "probe_asn",
+        "probe_txt_verification",
     ]
     patches = {}
     for name in probe_names:
@@ -41,17 +47,57 @@ def _patch_all_probes(**overrides):
     @contextlib.contextmanager
     def _ctx():
         with (
-            patch("mail_sovereignty.v2.classifier.probe_mx", new_callable=AsyncMock, return_value=patches["probe_mx"]),
-            patch("mail_sovereignty.v2.classifier.probe_spf", new_callable=AsyncMock, return_value=patches["probe_spf"]),
-            patch("mail_sovereignty.v2.classifier.probe_dkim", new_callable=AsyncMock, return_value=patches["probe_dkim"]),
-            patch("mail_sovereignty.v2.classifier.probe_dmarc", new_callable=AsyncMock, return_value=patches["probe_dmarc"]),
-            patch("mail_sovereignty.v2.classifier.probe_autodiscover", new_callable=AsyncMock, return_value=patches["probe_autodiscover"]),
-            patch("mail_sovereignty.v2.classifier.probe_cname_chain", new_callable=AsyncMock, return_value=patches["probe_cname_chain"]),
-            patch("mail_sovereignty.v2.classifier.probe_smtp", new_callable=AsyncMock, return_value=patches["probe_smtp"]),
-            patch("mail_sovereignty.v2.classifier.probe_tenant", new_callable=AsyncMock, return_value=patches["probe_tenant"]),
-            patch("mail_sovereignty.v2.classifier.probe_asn", new_callable=AsyncMock, return_value=patches["probe_asn"]),
-            patch("mail_sovereignty.v2.classifier.probe_txt_verification", new_callable=AsyncMock, return_value=patches["probe_txt_verification"]),
-            patch("mail_sovereignty.v2.classifier.detect_gateway", return_value=gateway),
+            patch(
+                "mail_sovereignty.classifier.probe_mx",
+                new_callable=AsyncMock,
+                return_value=patches["probe_mx"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_spf",
+                new_callable=AsyncMock,
+                return_value=patches["probe_spf"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_dkim",
+                new_callable=AsyncMock,
+                return_value=patches["probe_dkim"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_dmarc",
+                new_callable=AsyncMock,
+                return_value=patches["probe_dmarc"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_autodiscover",
+                new_callable=AsyncMock,
+                return_value=patches["probe_autodiscover"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_cname_chain",
+                new_callable=AsyncMock,
+                return_value=patches["probe_cname_chain"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_smtp",
+                new_callable=AsyncMock,
+                return_value=patches["probe_smtp"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_tenant",
+                new_callable=AsyncMock,
+                return_value=patches["probe_tenant"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_asn",
+                new_callable=AsyncMock,
+                return_value=patches["probe_asn"],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_txt_verification",
+                new_callable=AsyncMock,
+                return_value=patches["probe_txt_verification"],
+            ),
+            patch("mail_sovereignty.classifier.detect_gateway", return_value=gateway),
         ):
             yield
 
@@ -80,7 +126,9 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        expected = WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF] + WEIGHTS[SignalKind.DKIM]
+        expected = (
+            WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF] + WEIGHTS[SignalKind.DKIM]
+        )
         assert result.confidence == pytest.approx(expected)
 
     def test_deduplication_by_kind(self):
@@ -172,6 +220,15 @@ class TestAggregate:
         assert result.provider == Provider.SWISS_ISP
         assert result.confidence == pytest.approx(WEIGHTS[SignalKind.ASN])
 
+    def test_mx_hosts_passthrough(self):
+        evidence = [_ev(SignalKind.MX, Provider.MS365)]
+        result = _aggregate(evidence, mx_hosts=["mx1.example.com"])
+        assert result.mx_hosts == ["mx1.example.com"]
+
+    def test_mx_hosts_default_empty(self):
+        result = _aggregate([])
+        assert result.mx_hosts == []
+
 
 class TestClassify:
     async def test_ms365_scenario(self):
@@ -234,7 +291,9 @@ class TestClassify:
             result = await classify("example.com")
 
         assert result.provider == Provider.GOOGLE
-        expected = WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF] + WEIGHTS[SignalKind.DKIM]
+        expected = (
+            WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF] + WEIGHTS[SignalKind.DKIM]
+        )
         assert result.confidence == pytest.approx(expected)
 
     async def test_independent_scenario(self):
@@ -386,20 +445,108 @@ class TestClassify:
         mock_cname = AsyncMock(return_value=[])
 
         with (
-            patch("mail_sovereignty.v2.classifier.probe_mx", new_callable=AsyncMock, return_value=mx_ev),
-            patch("mail_sovereignty.v2.classifier.probe_spf", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.probe_dkim", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.probe_dmarc", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.probe_autodiscover", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.probe_cname_chain", mock_cname),
-            patch("mail_sovereignty.v2.classifier.probe_smtp", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.probe_tenant", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.probe_asn", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.probe_txt_verification", new_callable=AsyncMock, return_value=[]),
-            patch("mail_sovereignty.v2.classifier.detect_gateway", return_value=None),
+            patch(
+                "mail_sovereignty.classifier.probe_mx",
+                new_callable=AsyncMock,
+                return_value=mx_ev,
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_spf",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_dkim",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_dmarc",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_autodiscover",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch("mail_sovereignty.classifier.probe_cname_chain", mock_cname),
+            patch(
+                "mail_sovereignty.classifier.probe_smtp",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_tenant",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_asn",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "mail_sovereignty.classifier.probe_txt_verification",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch("mail_sovereignty.classifier.detect_gateway", return_value=None),
         ):
             await classify("example.com")
 
         mock_cname.assert_called_once()
         call_args = mock_cname.call_args
         assert call_args[0][1] == ["custom-mx.example.com"]
+
+    async def test_classify_populates_mx_hosts(self):
+        mx_ev = [
+            Evidence(
+                kind=SignalKind.MX,
+                provider=Provider.MS365,
+                weight=WEIGHTS[SignalKind.MX],
+                detail="MX match",
+                raw="example-com.mail.protection.outlook.com",
+            )
+        ]
+
+        with _patch_all_probes(probe_mx=mx_ev):
+            result = await classify("example.com")
+
+        assert result.mx_hosts == ["example-com.mail.protection.outlook.com"]
+
+
+class TestClassifyMany:
+    async def test_yields_all_domains(self):
+        mx_ev = [
+            Evidence(
+                kind=SignalKind.MX,
+                provider=Provider.MS365,
+                weight=WEIGHTS[SignalKind.MX],
+                detail="MX match",
+                raw="mx.outlook.com",
+            )
+        ]
+
+        with _patch_all_probes(probe_mx=mx_ev):
+            results = []
+            async for domain, result in classify_many(["a.com", "b.com"]):
+                results.append((domain, result))
+
+        domains = {d for d, _ in results}
+        assert domains == {"a.com", "b.com"}
+        for _, r in results:
+            assert r.provider == Provider.MS365
+
+    async def test_empty_domains(self):
+        results = []
+        async for domain, result in classify_many([]):
+            results.append((domain, result))
+        assert results == []
+
+    async def test_respects_concurrency(self):
+        with _patch_all_probes():
+            results = []
+            async for domain, result in classify_many(["a.com"], max_concurrency=1):
+                results.append((domain, result))
+        assert len(results) == 1
