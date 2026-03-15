@@ -44,6 +44,17 @@ def _make_resolver() -> dns.asyncresolver.Resolver:
     return resolver
 
 
+async def lookup_mx_hosts(
+    domain: str, resolver: dns.asyncresolver.Resolver
+) -> list[str]:
+    """Return ALL MX hostnames for a domain, regardless of provider matching."""
+    try:
+        answer = await resolver.resolve(domain, "MX")
+    except (dns.exception.DNSException, Exception):
+        return []
+    return [str(rdata.exchange).rstrip(".").lower() for rdata in answer]
+
+
 async def probe_mx(domain: str, resolver: dns.asyncresolver.Resolver) -> list[Evidence]:
     """Query MX records and match hostnames against provider patterns."""
     results: list[Evidence] = []

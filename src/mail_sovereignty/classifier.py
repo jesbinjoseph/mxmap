@@ -8,8 +8,10 @@ from collections.abc import AsyncIterator
 
 from .models import ClassificationResult, Evidence, Provider, SignalKind
 from .probes import (
+    WEIGHTS,
     _make_resolver,
     detect_gateway,
+    lookup_mx_hosts,
     probe_asn,
     probe_autodiscover,
     probe_cname_chain,
@@ -24,6 +26,9 @@ from .probes import (
 
 # Primary signals that can stand on their own
 _PRIMARY_KINDS = frozenset({SignalKind.MX, SignalKind.SPF, SignalKind.DKIM})
+
+# Signals that can only confirm, not establish, a provider classification
+_CONFIRMATION_ONLY_KINDS = frozenset({SignalKind.TENANT, SignalKind.TXT_VERIFICATION})
 
 
 def _aggregate(
@@ -51,13 +56,13 @@ def _aggregate(
             providers_with_primary.add(e.provider)
 
     # Group by provider, deduplicate by SignalKind (keep first per kind)
-    # Filter out TENANT evidence for providers without primary signals
+    # Filter out confirmation-only evidence for providers without primary signals
     by_provider: dict[Provider, dict[SignalKind, Evidence]] = defaultdict(dict)
     for e in evidence:
         if e.provider == Provider.INDEPENDENT:
             continue
-        # Tenant is confirmation-only: discard if provider has no primary signal
-        if e.kind == SignalKind.TENANT and e.provider not in providers_with_primary:
+        # Confirmation-only signals: discard if provider has no primary signal
+        if e.kind in _CONFIRMATION_ONLY_KINDS and e.provider not in providers_with_primary:
             continue
         if e.kind not in by_provider[e.provider]:
             by_provider[e.provider][e.kind] = e
@@ -77,7 +82,21 @@ def _aggregate(
         scores[provider] = sum(e.weight for e in signals.values())
 
     winner = max(scores, key=lambda p: scores[p])
-    confidence = min(1.0, scores[winner])
+
+    # Factor 1: Vote share - what fraction of all evidence points to winner?
+    total_all_scores = sum(scores.values())
+    vote_share = scores[winner] / total_all_scores if total_all_scores > 0 else 0.0
+
+    # Factor 2: Depth - how much of the signal spectrum responded?
+    observed_kinds: set[SignalKind] = set()
+    for signals in by_provider.values():
+        observed_kinds.update(signals.keys())
+    observed_weight = sum(WEIGHTS[k] for k in observed_kinds)
+
+    _DEPTH_THRESHOLD = 0.40  # MX+SPF is enough for full depth
+    depth = min(1.0, observed_weight / _DEPTH_THRESHOLD)
+
+    confidence = min(1.0, vote_share * depth)
 
     # Collect all deduplicated evidence for the result
     all_deduped = []
@@ -97,14 +116,14 @@ async def classify(domain: str) -> ClassificationResult:
     """Classify a domain's mail infrastructure provider via DNS probes."""
     resolver = _make_resolver()
 
-    # MX first — we need the hosts for cname_chain, smtp, asn
+    # Lookup ALL MX hosts first (for downstream probes), then pattern-match
+    all_mx_hosts = await lookup_mx_hosts(domain, resolver)
     mx_evidence = await probe_mx(domain, resolver)
-    mx_hosts = [e.raw for e in mx_evidence]
 
     # Gateway detection (sync, no I/O)
-    gateway = detect_gateway(mx_hosts)
+    gateway = detect_gateway(all_mx_hosts)
 
-    # Run remaining probes concurrently
+    # Run remaining probes concurrently, using ALL MX hosts
     (
         spf_ev,
         dkim_ev,
@@ -120,10 +139,10 @@ async def classify(domain: str) -> ClassificationResult:
         probe_dkim(domain, resolver),
         probe_dmarc(domain, resolver),
         probe_autodiscover(domain, resolver),
-        probe_cname_chain(domain, mx_hosts, resolver),
-        probe_smtp(mx_hosts),
+        probe_cname_chain(domain, all_mx_hosts, resolver),
+        probe_smtp(all_mx_hosts),
         probe_tenant(domain),
-        probe_asn(mx_hosts, resolver),
+        probe_asn(all_mx_hosts, resolver),
         probe_txt_verification(domain, resolver),
     )
 
@@ -139,7 +158,7 @@ async def classify(domain: str) -> ClassificationResult:
         + asn_ev
         + txt_ev
     )
-    return _aggregate(all_evidence, gateway=gateway, mx_hosts=mx_hosts)
+    return _aggregate(all_evidence, gateway=gateway, mx_hosts=all_mx_hosts)
 
 
 async def classify_many(

@@ -114,6 +114,7 @@
     letter-spacing: 0.5px; margin-bottom: 2px; font-weight: 600;
   }
   .popup-section-hint { font-weight: 400; opacity: 0.7; }
+
   .dns-table { border-collapse: collapse; }
   .dns-table td { padding: 1px 8px 1px 0; vertical-align: baseline; font-size: 12px; white-space: nowrap; }
   .dns-table .dn { font-weight: 600; }
@@ -159,7 +160,7 @@
     </div>
     <div class="info-card">
       <h3>How does it work?</h3>
-      <p>Each municipality's official domain is checked via public DNS records (MX + SPF) and classified by provider type.</p>
+      <p>Each municipality's official domain is checked via multiple DNS signals (MX, SPF, DKIM, SMTP banner, etc.) and classified by provider type with confidence scoring.</p>
       <p style="font-size:12px;color:#777;margin-top:6px;">Disclaimer: DNS records indicate mail routing and authorized senders, not necessarily where data is stored.</p>
     </div>
     <div class="info-card">
@@ -198,6 +199,14 @@ const LABELS = {
   'independent':  'Independent',
   unknown:        'Unknown'
 };
+
+const CONFIDENCE_THRESHOLD = 15; // 0-100 scale
+
+function effectiveProvider(m) {
+  if (!m || m.provider === 'unknown') return 'unknown';
+  if (m.classification_confidence < CONFIDENCE_THRESHOLD) return 'independent';
+  return m.provider;
+}
 
 function escapeHtml(str) {
   const el = document.createElement('span');
@@ -307,6 +316,7 @@ const map = L.map('map', {
   renderer: L.canvas()
 });
 
+
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
@@ -394,6 +404,13 @@ async function loadData() {
       'Updated ' + date.toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
   }
 
+  // Recompute counts with confidence threshold applied
+  const adjustedCounts = {};
+  for (const bfs of Object.keys(muni)) {
+    const ep = effectiveProvider(muni[bfs]);
+    adjustedCounts[ep] = (adjustedCounts[ep] || 0) + 1;
+  }
+
   // Legend with counts
   const isMobile = window.innerWidth <= 600;
   const legend = L.control({ position: isMobile ? 'topright' : 'bottomright' });
@@ -404,8 +421,9 @@ async function loadData() {
       '<button class="legend-toggle" aria-label="Toggle legend" aria-expanded="' + (!isMobile) + '">' + (isMobile ? 'Legend \u25B8' : '') + '</button>' +
       '<div class="legend-content">' +
       '<strong>Email Provider</strong>' +
-      legendGroupHtml('US-based', ['microsoft', 'aws', 'google'], dnsData.counts) +
-      legendGroupHtml('Swiss-based', ['independent', 'swiss-isp', 'infomaniak'], dnsData.counts) +
+      legendGroupHtml('US-based', ['microsoft', 'aws', 'google'], adjustedCounts) +
+      legendGroupHtml('Swiss-based', ['swiss-isp', 'infomaniak'], adjustedCounts) +
+      legendGroupHtml('', ['independent'], adjustedCounts) +
       '</div>';
     L.DomEvent.disableClickPropagation(div);
     return div;
@@ -429,7 +447,7 @@ async function loadData() {
     style: function (feature) {
       const bfs = String(feature.id);
       const m = muni[bfs];
-      const provider = m ? m.provider : 'unknown';
+      const provider = effectiveProvider(m);
       return {
         fillColor: COLORS[provider] || COLORS.unknown,
         weight: 0.5,
@@ -444,9 +462,11 @@ async function loadData() {
         layer.bindPopup(`<div class="info-popup"><strong>BFS ${bfs}</strong><br>No data</div>`);
         return;
       }
-      const color = COLORS[m.provider] || COLORS.unknown;
-      const textColor = ['aws', 'google', 'infomaniak', 'swiss-isp', 'unknown'].includes(m.provider) ? '#333' : '#fff';
-      const label = LABELS[m.provider] || m.provider;
+      const ep = effectiveProvider(m);
+      const demoted = ep !== m.provider;
+      const color = COLORS[ep] || COLORS.unknown;
+      const textColor = ['aws', 'google', 'infomaniak', 'swiss-isp', 'unknown'].includes(ep) ? '#333' : '#fff';
+      const label = LABELS[ep] || ep;
 
       let mxSection = '';
       if (m.mx && m.mx.length > 0) {
@@ -459,14 +479,30 @@ async function loadData() {
         spfSection = `<div class="popup-section"><div class="popup-section-title">Authorized to send mail <span class="popup-section-hint">(SPF)</span></div>${renderTable(spfDelegations)}</div>`;
       }
 
+      const confidence = m.classification_confidence != null ? m.classification_confidence : 0;
+      const confPct = Math.round(confidence) + '%';
+      const demotedHint = demoted ? ` <span style="color:#999;font-size:11px">(classified as ${escapeHtml(LABELS[m.provider] || m.provider)})</span>` : '';
+
+      let signalsSection = '';
+      if (m.classification_signals && m.classification_signals.length > 0) {
+        const signalRows = m.classification_signals.map(s =>
+          `<tr><td style="font-weight:600;white-space:nowrap">${escapeHtml(s.kind)}</td><td style="color:#666;font-size:11px">${escapeHtml(s.detail)}</td></tr>`
+        ).join('');
+        signalsSection = `<div class="popup-section"><div class="popup-section-title">Classification signals</div><table class="dns-table">${signalRows}</table></div>`;
+      }
+
       const eName = escapeHtml(m.name);
       const eDomain = escapeHtml(m.domain || 'unknown');
       const eLabel = escapeHtml(label);
+      const confLine = confidence > 0 ? `<br><span style="font-size:11px;color:#888">Confidence: ${confPct}</span>` : '';
+      const detailsBody = signalsSection + mxSection + spfSection;
+      const badge = `<span class="provider-badge" style="background:${color};color:${textColor}">${eLabel}</span>${demotedHint}`;
+
       layer.bindPopup(
         `<div class="info-popup">` +
         `<strong>${eName}</strong><br>` +
-        `${eDomain} <span class="provider-badge" style="background:${color};color:${textColor}">${eLabel}</span>` +
-        mxSection + spfSection +
+        `${eDomain} ${badge}${confLine}` +
+        signalsSection + mxSection + spfSection +
         `</div>`,
         { maxWidth: 450 }
       );

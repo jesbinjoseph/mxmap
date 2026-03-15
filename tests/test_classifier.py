@@ -42,11 +42,22 @@ def _patch_all_probes(**overrides):
     # Also handle detect_gateway
     gateway = overrides.get("detect_gateway", None)
 
+    # lookup_mx_hosts: default derives from probe_mx evidence raw values
+    if "lookup_mx_hosts" in overrides:
+        mx_hosts = overrides["lookup_mx_hosts"]
+    else:
+        mx_hosts = [e.raw for e in patches["probe_mx"]]
+
     import contextlib
 
     @contextlib.contextmanager
     def _ctx():
         with (
+            patch(
+                "mail_sovereignty.classifier.lookup_mx_hosts",
+                new_callable=AsyncMock,
+                return_value=mx_hosts,
+            ),
             patch(
                 "mail_sovereignty.classifier.probe_mx",
                 new_callable=AsyncMock,
@@ -116,7 +127,8 @@ class TestAggregate:
         evidence = [_ev(SignalKind.MX, Provider.MS365)]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        assert result.confidence == WEIGHTS[SignalKind.MX]
+        # vote_share=1.0, depth=0.20/0.40=0.50
+        assert result.confidence == pytest.approx(0.50)
 
     def test_multi_signal_same_provider(self):
         evidence = [
@@ -126,10 +138,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        expected = (
-            WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF] + WEIGHTS[SignalKind.DKIM]
-        )
-        assert result.confidence == pytest.approx(expected)
+        # vote_share=1.0, depth=(0.20+0.20+0.15)/0.40=1.375 → capped at 1.0
+        assert result.confidence == pytest.approx(1.0)
 
     def test_deduplication_by_kind(self):
         evidence = [
@@ -138,7 +148,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        assert result.confidence == pytest.approx(WEIGHTS[SignalKind.MX])
+        # vote_share=1.0, depth=0.20/0.40=0.50
+        assert result.confidence == pytest.approx(0.50)
 
     def test_conflict_higher_score_wins(self):
         evidence = [
@@ -148,7 +159,10 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        expected = WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF]
+        # vote_share=0.40/0.42≈0.952, depth=(0.20+0.20+0.02)/0.40=1.05 → 1.0
+        ms_score = WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF]
+        total = ms_score + WEIGHTS[SignalKind.DMARC]
+        expected = ms_score / total  # ≈0.952
         assert result.confidence == pytest.approx(expected)
 
     def test_confidence_capped_at_1(self):
@@ -191,8 +205,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        expected = WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.TENANT]
-        assert result.confidence == pytest.approx(expected)
+        # vote_share=1.0, depth=(0.20+0.10)/0.40=0.75
+        assert result.confidence == pytest.approx(0.75)
 
     def test_tenant_discarded_when_different_provider_has_primary(self):
         """MS365 tenant should be discarded when only Google has primary signals."""
@@ -202,7 +216,29 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.GOOGLE
-        assert result.confidence == pytest.approx(WEIGHTS[SignalKind.MX])
+        # vote_share=1.0, depth=0.20/0.40=0.50
+        assert result.confidence == pytest.approx(0.50)
+
+    def test_txt_verification_confirmation_only_discarded(self):
+        """TXT_VERIFICATION alone should be discarded (confirmation-only)."""
+        evidence = [
+            _ev(SignalKind.TXT_VERIFICATION, Provider.MS365),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.INDEPENDENT
+        assert result.confidence == 0.0
+
+    def test_txt_verification_confirmation_with_primary(self):
+        """TXT_VERIFICATION with primary signals should be counted."""
+        evidence = [
+            _ev(SignalKind.MX, Provider.MS365),
+            _ev(SignalKind.TXT_VERIFICATION, Provider.MS365),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        # vote_share=1.0, depth=(0.20+0.07)/0.40=0.675
+        expected = min(1.0, (WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.TXT_VERIFICATION]) / 0.40)
+        assert result.confidence == pytest.approx(expected)
 
     def test_infomaniak_classification(self):
         evidence = [
@@ -218,7 +254,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.SWISS_ISP
-        assert result.confidence == pytest.approx(WEIGHTS[SignalKind.ASN])
+        # vote_share=1.0, depth=0.08/0.40=0.20
+        assert result.confidence == pytest.approx(0.20)
 
     def test_mx_hosts_passthrough(self):
         evidence = [_ev(SignalKind.MX, Provider.MS365)]
@@ -255,8 +292,8 @@ class TestClassify:
             result = await classify("example.com")
 
         assert result.provider == Provider.MS365
-        expected = WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF]
-        assert result.confidence == pytest.approx(expected)
+        # vote_share=1.0, depth=(0.20+0.20)/0.40=1.0
+        assert result.confidence == pytest.approx(1.0)
 
     async def test_google_scenario(self):
         mx_ev = [
@@ -291,10 +328,8 @@ class TestClassify:
             result = await classify("example.com")
 
         assert result.provider == Provider.GOOGLE
-        expected = (
-            WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF] + WEIGHTS[SignalKind.DKIM]
-        )
-        assert result.confidence == pytest.approx(expected)
+        # vote_share=1.0, depth=(0.20+0.20+0.15)/0.40=1.375 → 1.0
+        assert result.confidence == pytest.approx(1.0)
 
     async def test_independent_scenario(self):
         with _patch_all_probes():
@@ -429,10 +464,11 @@ class TestClassify:
             result = await classify("example.com")
 
         assert result.provider == Provider.MS365
-        expected = WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.TENANT]
-        assert result.confidence == pytest.approx(expected)
+        # vote_share=1.0, depth=(0.20+0.10)/0.40=0.75
+        assert result.confidence == pytest.approx(0.75)
 
     async def test_classify_passes_mx_hosts_to_cname_chain(self):
+        """cname_chain should receive hosts from lookup_mx_hosts, not from MX evidence."""
         mx_ev = [
             Evidence(
                 kind=SignalKind.MX,
@@ -442,9 +478,15 @@ class TestClassify:
                 raw="custom-mx.example.com",
             )
         ]
+        all_mx_hosts = ["custom-mx.example.com", "backup-mx.example.com"]
         mock_cname = AsyncMock(return_value=[])
 
         with (
+            patch(
+                "mail_sovereignty.classifier.lookup_mx_hosts",
+                new_callable=AsyncMock,
+                return_value=all_mx_hosts,
+            ),
             patch(
                 "mail_sovereignty.classifier.probe_mx",
                 new_callable=AsyncMock,
@@ -497,9 +539,10 @@ class TestClassify:
 
         mock_cname.assert_called_once()
         call_args = mock_cname.call_args
-        assert call_args[0][1] == ["custom-mx.example.com"]
+        assert call_args[0][1] == all_mx_hosts
 
     async def test_classify_populates_mx_hosts(self):
+        """result.mx_hosts should come from lookup_mx_hosts, not from MX evidence."""
         mx_ev = [
             Evidence(
                 kind=SignalKind.MX,
@@ -509,11 +552,15 @@ class TestClassify:
                 raw="example-com.mail.protection.outlook.com",
             )
         ]
+        all_mx_hosts = [
+            "example-com.mail.protection.outlook.com",
+            "mail.stadtluzern.ch",
+        ]
 
-        with _patch_all_probes(probe_mx=mx_ev):
+        with _patch_all_probes(probe_mx=mx_ev, lookup_mx_hosts=all_mx_hosts):
             result = await classify("example.com")
 
-        assert result.mx_hosts == ["example-com.mail.protection.outlook.com"]
+        assert result.mx_hosts == all_mx_hosts
 
 
 class TestClassifyMany:

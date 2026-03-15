@@ -12,6 +12,7 @@ from mail_sovereignty.models import Provider, SignalKind
 from mail_sovereignty.probes import (
     WEIGHTS,
     detect_gateway,
+    lookup_mx_hosts,
     probe_asn,
     probe_autodiscover,
     probe_cname_chain,
@@ -72,6 +73,32 @@ class TestWeights:
     def test_all_signal_kinds_have_weight(self):
         for kind in SignalKind:
             assert kind in WEIGHTS, f"{kind} missing from WEIGHTS"
+
+
+class TestLookupMxHosts:
+    async def test_returns_all_hosts(self):
+        resolver = _mock_resolver()
+        resolver.resolve.return_value = [
+            _mx_rdata("mail.stadtluzern.ch."),
+            _mx_rdata("aspmx.l.google.com."),
+        ]
+        hosts = await lookup_mx_hosts("example.com", resolver)
+        assert hosts == ["mail.stadtluzern.ch", "aspmx.l.google.com"]
+
+    async def test_returns_unmatched_hosts(self):
+        resolver = _mock_resolver()
+        resolver.resolve.return_value = [
+            _mx_rdata("mr01a.rzeins.ch."),
+            _mx_rdata("mr02b.rzeins.ch."),
+        ]
+        hosts = await lookup_mx_hosts("unteriberg.ch", resolver)
+        assert hosts == ["mr01a.rzeins.ch", "mr02b.rzeins.ch"]
+
+    async def test_dns_error_returns_empty(self):
+        resolver = _mock_resolver()
+        resolver.resolve.side_effect = dns.exception.DNSException("NXDOMAIN")
+        hosts = await lookup_mx_hosts("example.com", resolver)
+        assert hosts == []
 
 
 class TestProbeMx:
