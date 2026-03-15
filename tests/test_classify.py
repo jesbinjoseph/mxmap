@@ -5,6 +5,7 @@ from mail_sovereignty.classify import (
     classify_from_mx,
     classify_from_smtp_banner,
     classify_from_spf,
+    classify_with_evidence,
     detect_gateway,
     spf_mentions_providers,
 )
@@ -681,3 +682,162 @@ class TestClassifyFromSmtpBanner:
             )
             == "microsoft"
         )
+
+
+# ── classify_with_evidence() ───────────────────────────────────────
+
+
+class TestClassifyWithEvidence:
+    def test_microsoft_mx(self):
+        r = classify_with_evidence(["bern-ch.mail.protection.outlook.com"], "")
+        assert r.provider == "microsoft"
+        assert len(r.signals) > 0
+        assert any(s.source == "mx" and s.provider == "microsoft" for s in r.signals)
+
+    def test_google_mx(self):
+        r = classify_with_evidence(
+            ["aspmx.l.google.com", "alt1.aspmx.l.google.com"], ""
+        )
+        assert r.provider == "google"
+        assert any(s.source == "mx" for s in r.signals)
+
+    def test_infomaniak_mx(self):
+        r = classify_with_evidence(["mxpool.infomaniak.com"], "")
+        assert r.provider == "infomaniak"
+
+    def test_aws_mx(self):
+        r = classify_with_evidence(["inbound-smtp.us-east-1.amazonaws.com"], "")
+        assert r.provider == "aws"
+
+    def test_independent_mx(self):
+        r = classify_with_evidence(["mail.example.ch"], "")
+        assert r.provider == "independent"
+        assert r.confidence == 0.0
+
+    def test_no_mx_no_spf(self):
+        r = classify_with_evidence([], "")
+        assert r.provider == "unknown"
+        assert r.confidence == 0.0
+
+    def test_spf_fallback_when_no_mx(self):
+        r = classify_with_evidence([], "v=spf1 include:spf.protection.outlook.com -all")
+        assert r.provider == "microsoft"
+        assert any(s.source == "spf" for s in r.signals)
+
+    def test_cname_detects_microsoft(self):
+        r = classify_with_evidence(
+            ["mail.example.ch"],
+            "",
+            mx_cnames={"mail.example.ch": "mail.protection.outlook.com"},
+        )
+        assert r.provider == "microsoft"
+        assert any(s.source == "mx_cname" for s in r.signals)
+
+    def test_gateway_detected(self):
+        r = classify_with_evidence(
+            ["customer.seppmail.cloud"],
+            "v=spf1 include:spf.protection.outlook.com -all",
+        )
+        assert r.provider == "microsoft"
+        assert r.gateway == "seppmail"
+
+    def test_gateway_no_provider_stays_independent(self):
+        r = classify_with_evidence(
+            ["filter.seppmail.cloud"],
+            "v=spf1 ip4:1.2.3.4 -all",
+        )
+        assert r.provider == "independent"
+        assert r.gateway == "seppmail"
+
+    def test_swiss_isp_asn(self):
+        r = classify_with_evidence(
+            ["mail1.rzobt.ch"],
+            "",
+            mx_asns={3303},
+        )
+        assert r.provider == "swiss-isp"
+        assert any(s.source == "asn" for s in r.signals)
+
+    def test_swiss_isp_with_dkim_microsoft(self):
+        r = classify_with_evidence(
+            ["mail1.rzobt.ch"],
+            "",
+            mx_asns={3303},
+            dkim={
+                "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+            },
+        )
+        assert r.provider == "microsoft"
+        assert any(s.source == "dkim" for s in r.signals)
+
+    def test_confidence_higher_with_multiple_agreeing_signals(self):
+        r_single = classify_with_evidence(
+            ["mail.example.ch"],
+            "",
+            dkim={
+                "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+            },
+        )
+        r_multi = classify_with_evidence(
+            ["mail.example.ch"],
+            "v=spf1 include:spf.protection.outlook.com -all",
+            dkim={
+                "microsoft": "selector1-example-ch._domainkey.example.onmicrosoft.com"
+            },
+        )
+        assert r_multi.confidence >= r_single.confidence
+
+    def test_conflict_mx_microsoft_dkim_google(self):
+        r = classify_with_evidence(
+            ["mail.protection.outlook.com"],
+            "",
+            dkim={"google": "google._domainkey.googlehosted.com"},
+        )
+        # MX (weight 1.0) > DKIM (weight 0.85), so microsoft wins
+        assert r.provider == "microsoft"
+        assert any(s.source == "mx" and s.provider == "microsoft" for s in r.signals)
+        assert any(s.source == "dkim" and s.provider == "google" for s in r.signals)
+
+    def test_gateway_spf_microsoft_dkim_google(self):
+        r = classify_with_evidence(
+            ["mx.cleanmail.ch"],
+            "v=spf1 include:spf.protection.outlook.com -all",
+            dkim={"google": "google._domainkey.googlehosted.com"},
+        )
+        # SPF microsoft (0.75) vs DKIM google (0.85) → google wins
+        assert r.provider == "google"
+        assert r.gateway == "cleanmail"
+
+    def test_autodiscover_produces_signal(self):
+        r = classify_with_evidence(
+            ["mail.example.ch"],
+            "",
+            autodiscover={"autodiscover_cname": "autodiscover.outlook.com"},
+        )
+        assert r.provider == "microsoft"
+        assert any(s.source == "autodiscover" for s in r.signals)
+
+    def test_resolved_spf_produces_signal(self):
+        r = classify_with_evidence(
+            [],
+            "v=spf1 include:custom.ch -all",
+            resolved_spf="v=spf1 include:spf.protection.outlook.com -all",
+        )
+        assert r.provider == "microsoft"
+        assert any(s.source == "spf_resolved" for s in r.signals)
+
+    def test_all_existing_classify_results_match(self):
+        """Verify classify_with_evidence().provider matches classify() for key cases."""
+        cases = [
+            (["mail.protection.outlook.com"], "", {}),
+            (["aspmx.l.google.com"], "", {}),
+            (["mxpool.infomaniak.com"], "", {}),
+            (["mail.example.ch"], "", {}),
+            ([], "", {}),
+            ([], "v=spf1 include:spf.protection.outlook.com -all", {}),
+        ]
+        for mx, spf, kwargs in cases:
+            assert (
+                classify(mx, spf, **kwargs)
+                == classify_with_evidence(mx, spf, **kwargs).provider
+            )

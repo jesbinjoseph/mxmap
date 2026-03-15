@@ -87,6 +87,17 @@ def _detect_potential_gateways(
     return results
 
 
+def _has_signal_conflict(classification_signals: list[dict]) -> bool:
+    """Check if classification signals contain conflicting providers."""
+    provider_weights: dict[str, float] = {}
+    for sig in classification_signals:
+        p = sig.get("provider")
+        if p is not None:
+            provider_weights[p] = provider_weights.get(p, 0.0) + sig.get("weight", 0.0)
+    high_weight_providers = [p for p, w in provider_weights.items() if w > 0.5]
+    return len(high_weight_providers) >= 2
+
+
 def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     """Score a municipality entry 0-100 with explanatory flags."""
     provider = entry.get("provider", "unknown")
@@ -99,133 +110,198 @@ def score_entry(entry: dict[str, Any]) -> dict[str, Any]:
     if provider == "merged":
         return {"score": 100, "flags": ["merged_municipality"]}
 
+    # Use classification_confidence as base score when available
+    classification_confidence = entry.get("classification_confidence")
+
     score = 0
     flags = []
 
-    # Has a domain (+15)
-    if domain:
-        score += 15
+    if classification_confidence is not None:
+        # Evidence-based scoring: use classification confidence as base
+        score = round(classification_confidence)
     else:
-        flags.append("no_domain")
-
-    # Has MX records (+25)
-    if mx:
-        score += 25
-        if len(mx) >= 2:
-            score += 5
-            flags.append("multiple_mx")
-    else:
-        flags.append("no_mx")
-
-    # Has SPF record (+15)
-    if spf:
-        score += 15
-        if spf.rstrip().endswith("-all"):
-            score += 5
-            flags.append("spf_strict")
-        elif "~all" in spf:
-            score += 3
-            flags.append("spf_softfail")
-    else:
-        flags.append("no_spf")
-
-    # Cross-validate MX vs SPF provider
-    mx_provider = classify_from_mx(mx)
-    spf_provider = classify_from_spf(spf)
-    spf_providers = spf_mentions_providers(spf)
-
-    if mx_provider and spf_provider:
-        if mx_provider == spf_provider:
-            score += 20
-            flags.append("mx_spf_match")
-        elif mx_provider == "independent" and spf_provider:
-            score += 10
-            flags.append("independent_mx_with_cloud_spf")
-        elif mx_provider in spf_providers:
-            score += 20
-            flags.append("mx_spf_match")
+        # Legacy scoring path: compute from scratch
+        # Has a domain (+15)
+        if domain:
+            score += 15
         else:
-            score -= 20
-            flags.append("mx_spf_mismatch")
-    elif mx_provider == "independent" and spf and not spf_provider:
-        score += 20
-        flags.append("mx_spf_match")
+            flags.append("no_domain")
 
-    # SPF mentions multiple main providers (-10)
-    main_spf_providers = spf_providers & set(PROVIDER_KEYWORDS.keys())
-    if len(main_spf_providers) >= 2:
-        score -= 10
-        flags.append(f"multi_provider_spf:{'+'.join(sorted(spf_providers))}")
+        # Has MX records (+25)
+        if mx:
+            score += 25
+            if len(mx) >= 2:
+                score += 5
+                flags.append("multiple_mx")
+        else:
+            flags.append("no_mx")
 
-    # No MX but classified via SPF only (-15)
-    if not mx and provider not in ("unknown", "merged") and spf_provider:
-        score -= 15
-        flags.append("classified_via_spf_only")
+        # Has SPF record (+15)
+        if spf:
+            score += 15
+            if spf.rstrip().endswith("-all"):
+                score += 5
+                flags.append("spf_strict")
+            elif "~all" in spf:
+                score += 3
+                flags.append("spf_softfail")
+        else:
+            flags.append("no_spf")
 
-    # Provider is classified (+10)
-    if provider not in ("unknown",):
-        score += 10
-        flags.append("provider_classified")
-    else:
-        flags.append("provider_unknown")
+        # Cross-validate MX vs SPF provider
+        mx_provider = classify_from_mx(mx)
+        spf_provider = classify_from_spf(spf)
+        spf_providers = spf_mentions_providers(spf)
 
-    # Provider detected via CNAME resolution
-    mx_cnames = entry.get("mx_cnames", {})
-    if mx_cnames:
-        mx_blob = " ".join(mx).lower()
-        cname_blob = " ".join(mx_cnames.values()).lower()
-        mx_matches_provider = any(
-            any(k in mx_blob for k in kws) for kws in PROVIDER_KEYWORDS.values()
-        )
-        cname_matches_provider = any(
-            any(k in cname_blob for k in kws) for kws in PROVIDER_KEYWORDS.values()
-        )
-        if not mx_matches_provider and cname_matches_provider:
-            flags.append("provider_via_cname")
+        if mx_provider and spf_provider:
+            if mx_provider == spf_provider:
+                score += 20
+                flags.append("mx_spf_match")
+            elif mx_provider == "independent" and spf_provider:
+                score += 10
+                flags.append("independent_mx_with_cloud_spf")
+            elif mx_provider in spf_providers:
+                score += 20
+                flags.append("mx_spf_match")
+            else:
+                score -= 20
+                flags.append("mx_spf_mismatch")
+        elif mx_provider == "independent" and spf and not spf_provider:
+            score += 20
+            flags.append("mx_spf_match")
+
+        # SPF mentions multiple main providers (-10)
+        main_spf_providers = spf_providers & set(PROVIDER_KEYWORDS.keys())
+        if len(main_spf_providers) >= 2:
+            score -= 10
+            flags.append(f"multi_provider_spf:{'+'.join(sorted(spf_providers))}")
+
+        # No MX but classified via SPF only (-15)
+        if not mx and provider not in ("unknown", "merged") and spf_provider:
+            score -= 15
+            flags.append("classified_via_spf_only")
+
+        # Provider is classified (+10)
+        if provider not in ("unknown",):
+            score += 10
+            flags.append("provider_classified")
+        else:
+            flags.append("provider_unknown")
+
+        # Provider detected via CNAME resolution
+        mx_cnames = entry.get("mx_cnames", {})
+        if mx_cnames:
+            mx_blob = " ".join(mx).lower()
+            cname_blob = " ".join(mx_cnames.values()).lower()
+            mx_matches_provider = any(
+                any(k in mx_blob for k in kws) for kws in PROVIDER_KEYWORDS.values()
+            )
+            cname_matches_provider = any(
+                any(k in cname_blob for k in kws) for kws in PROVIDER_KEYWORDS.values()
+            )
+            if not mx_matches_provider and cname_matches_provider:
+                flags.append("provider_via_cname")
 
     # Provider detected via gateway + SPF resolution
     if entry.get("gateway"):
         flags.append("provider_via_gateway_spf")
 
     # SMTP banner confirms or suggests provider
+    classification_signals = entry.get("classification_signals")
     smtp_banner = entry.get("smtp_banner", "")
     if smtp_banner:
         smtp_provider = classify_from_smtp_banner(smtp_banner)
-        if smtp_provider and smtp_provider == provider:
-            score += 5
-            flags.append("smtp_confirms")
-        elif smtp_provider and provider == "independent":
-            flags.append(f"smtp_suggests:{smtp_provider}")
+        if classification_signals is not None:
+            # Source confirmation from signals
+            smtp_in_signals = any(
+                s.get("source") == "smtp" and s.get("provider") == provider
+                for s in classification_signals
+            )
+            if smtp_in_signals:
+                score += 5
+                flags.append("smtp_confirms")
+            elif smtp_provider and provider == "independent":
+                flags.append(f"smtp_suggests:{smtp_provider}")
+        else:
+            if smtp_provider and smtp_provider == provider:
+                score += 5
+                flags.append("smtp_confirms")
+            elif smtp_provider and provider == "independent":
+                flags.append(f"smtp_suggests:{smtp_provider}")
 
     # Autodiscover confirms or suggests provider
     autodiscover = entry.get("autodiscover")
     if autodiscover:
-        ad_provider = classify_from_autodiscover(autodiscover)
-        if ad_provider and ad_provider == provider:
-            score += 5
-            flags.append("autodiscover_confirms")
-        elif ad_provider and provider == "independent":
-            flags.append(f"autodiscover_suggests:{ad_provider}")
+        if classification_signals is not None:
+            ad_in_signals = any(
+                s.get("source") == "autodiscover" and s.get("provider") == provider
+                for s in classification_signals
+            )
+            if ad_in_signals:
+                score += 5
+                flags.append("autodiscover_confirms")
+            else:
+                ad_provider = classify_from_autodiscover(autodiscover)
+                if ad_provider and provider == "independent":
+                    flags.append(f"autodiscover_suggests:{ad_provider}")
+        else:
+            ad_provider = classify_from_autodiscover(autodiscover)
+            if ad_provider and ad_provider == provider:
+                score += 5
+                flags.append("autodiscover_confirms")
+            elif ad_provider and provider == "independent":
+                flags.append(f"autodiscover_suggests:{ad_provider}")
 
     # DKIM confirms or suggests provider
     dkim = entry.get("dkim")
     if dkim:
-        dkim_provider = classify_from_dkim(dkim)
-        if dkim_provider and dkim_provider == provider:
-            score += 5
-            flags.append("dkim_confirms")
-        elif dkim_provider and provider in ("independent", "swiss-isp"):
-            flags.append(f"dkim_suggests:{dkim_provider}")
+        if classification_signals is not None:
+            dkim_in_signals = any(
+                s.get("source") == "dkim" and s.get("provider") == provider
+                for s in classification_signals
+            )
+            if dkim_in_signals:
+                score += 5
+                flags.append("dkim_confirms")
+            else:
+                dkim_provider = classify_from_dkim(dkim)
+                if dkim_provider and provider in ("independent", "swiss-isp"):
+                    flags.append(f"dkim_suggests:{dkim_provider}")
+        else:
+            dkim_provider = classify_from_dkim(dkim)
+            if dkim_provider and dkim_provider == provider:
+                score += 5
+                flags.append("dkim_confirms")
+            elif dkim_provider and provider in ("independent", "swiss-isp"):
+                flags.append(f"dkim_suggests:{dkim_provider}")
 
     # Tenant check confirms or suggests provider
     tenant_check = entry.get("tenant_check")
     if tenant_check:
-        tc_provider = next(iter(tenant_check), None)
-        if tc_provider and tc_provider == provider:
-            score += 5
-            flags.append("tenant_confirms")
-        elif tc_provider and provider in ("independent", "swiss-isp"):
-            flags.append(f"tenant_suggests:{tc_provider}")
+        if classification_signals is not None:
+            tenant_in_signals = any(
+                s.get("source") == "tenant" and s.get("provider") == provider
+                for s in classification_signals
+            )
+            if tenant_in_signals:
+                score += 5
+                flags.append("tenant_confirms")
+            else:
+                tc_provider = next(iter(tenant_check), None)
+                if tc_provider and provider in ("independent", "swiss-isp"):
+                    flags.append(f"tenant_suggests:{tc_provider}")
+        else:
+            tc_provider = next(iter(tenant_check), None)
+            if tc_provider and tc_provider == provider:
+                score += 5
+                flags.append("tenant_confirms")
+            elif tc_provider and provider in ("independent", "swiss-isp"):
+                flags.append(f"tenant_suggests:{tc_provider}")
+
+    # Signal conflict penalty
+    if classification_signals and _has_signal_conflict(classification_signals):
+        score -= 15
+        flags.append("signal_conflict")
 
     # Multi-source agreement (+10)
     sources_detail = entry.get("sources_detail", {})

@@ -1,13 +1,15 @@
 from mail_sovereignty.constants import (
-    AWS_KEYWORDS,
     FOREIGN_SENDER_KEYWORDS,
     GATEWAY_KEYWORDS,
-    GOOGLE_KEYWORDS,
-    INFOMANIAK_KEYWORDS,
-    MICROSOFT_KEYWORDS,
     PROVIDER_KEYWORDS,
     SMTP_BANNER_KEYWORDS,
     SWISS_ISP_ASNS,
+)
+from mail_sovereignty.evidence import (
+    ClassificationResult,
+    Signal,
+    SIGNAL_WEIGHTS,
+    resolve_provider,
 )
 
 
@@ -60,6 +62,159 @@ def _check_spf_for_provider(spf_blob: str) -> str | None:
     return None
 
 
+def classify_with_evidence(
+    mx_records: list[str],
+    spf_record: str | None,
+    mx_cnames: dict[str, str] | None = None,
+    mx_asns: set[int] | None = None,
+    resolved_spf: str | None = None,
+    autodiscover: dict[str, str] | None = None,
+    dkim: dict[str, str] | None = None,
+) -> ClassificationResult:
+    """Classify email provider with full evidence trail.
+
+    Collects signals from all DNS sources, then resolves the winning provider
+    via weighted evidence accumulation.
+    """
+    signals: list[Signal] = []
+    mx_blob = " ".join(mx_records).lower()
+
+    # ── MX hostname signals ──
+    for provider, keywords in PROVIDER_KEYWORDS.items():
+        if any(k in mx_blob for k in keywords):
+            signals.append(
+                Signal(
+                    source="mx",
+                    provider=provider,
+                    weight=SIGNAL_WEIGHTS["mx"],
+                    detail=f"MX hostname matches {provider}",
+                    raw_value=mx_blob,
+                )
+            )
+
+    # ── MX CNAME signals ──
+    if mx_records and mx_cnames:
+        cname_blob = " ".join(mx_cnames.values()).lower()
+        for provider, keywords in PROVIDER_KEYWORDS.items():
+            if any(k in cname_blob for k in keywords):
+                signals.append(
+                    Signal(
+                        source="mx_cname",
+                        provider=provider,
+                        weight=SIGNAL_WEIGHTS["mx_cname"],
+                        detail=f"MX CNAME target matches {provider}",
+                        raw_value=cname_blob,
+                    )
+                )
+
+    # ── SPF (direct) signals ──
+    spf_blob = (spf_record or "").lower()
+    for provider, keywords in PROVIDER_KEYWORDS.items():
+        if any(k in spf_blob for k in keywords):
+            signals.append(
+                Signal(
+                    source="spf",
+                    provider=provider,
+                    weight=SIGNAL_WEIGHTS["spf"],
+                    detail=f"SPF record mentions {provider}",
+                    raw_value=spf_blob,
+                )
+            )
+
+    # ── SPF (resolved) signals ──
+    if resolved_spf:
+        resolved_blob = resolved_spf.lower()
+        for provider, keywords in PROVIDER_KEYWORDS.items():
+            if any(k in resolved_blob for k in keywords):
+                signals.append(
+                    Signal(
+                        source="spf_resolved",
+                        provider=provider,
+                        weight=SIGNAL_WEIGHTS["spf_resolved"],
+                        detail=f"Resolved SPF includes mention {provider}",
+                        raw_value=resolved_blob,
+                    )
+                )
+
+    # ── DKIM signals ──
+    if dkim:
+        dkim_provider = classify_from_dkim(dkim)
+        if dkim_provider:
+            signals.append(
+                Signal(
+                    source="dkim",
+                    provider=dkim_provider,
+                    weight=SIGNAL_WEIGHTS["dkim"],
+                    detail=f"DKIM CNAME delegates to {dkim_provider}",
+                    raw_value=str(dkim),
+                )
+            )
+
+    # ── Autodiscover signals ──
+    if autodiscover:
+        ad_provider = classify_from_autodiscover(autodiscover)
+        if ad_provider:
+            # Determine weight based on record type
+            has_cname = any("cname" in k for k in autodiscover)
+            ad_weight = (
+                SIGNAL_WEIGHTS["autodiscover_cname"]
+                if has_cname
+                else SIGNAL_WEIGHTS["autodiscover_srv"]
+            )
+            signals.append(
+                Signal(
+                    source="autodiscover",
+                    provider=ad_provider,
+                    weight=ad_weight,
+                    detail=f"Autodiscover points to {ad_provider}",
+                    raw_value=str(autodiscover),
+                )
+            )
+
+    # ── ASN signals ──
+    if mx_asns:
+        matching_asns = mx_asns & SWISS_ISP_ASNS.keys()
+        if matching_asns:
+            isp_names = [SWISS_ISP_ASNS[asn] for asn in matching_asns]
+            signals.append(
+                Signal(
+                    source="asn",
+                    provider=None,
+                    weight=SIGNAL_WEIGHTS["asn"],
+                    detail=f"Swiss ISP: {', '.join(isp_names)}",
+                    raw_value=str(sorted(matching_asns)),
+                )
+            )
+
+    # ── Gateway detection ──
+    gateway = detect_gateway(mx_records) if mx_records else None
+
+    # ── Resolve provider from signals ──
+    provider_signals = [s for s in signals if s.provider is not None]
+
+    if provider_signals:
+        provider, confidence = resolve_provider(signals)
+    elif gateway:
+        # Gateway with no provider signals behind it
+        provider, confidence = "independent", 0.0
+    elif not mx_records:
+        provider, confidence = "unknown", 0.0
+    else:
+        # MX present but no provider match
+        has_swiss_isp = any(s.source == "asn" for s in signals)
+        if has_swiss_isp:
+            provider, confidence = "swiss-isp", 0.0
+        else:
+            provider, confidence = "independent", 0.0
+
+    return ClassificationResult(
+        provider=provider,
+        confidence=confidence,
+        signals=signals,
+        gateway=gateway,
+    )
+
+
 def classify(
     mx_records: list[str],
     spf_record: str | None,
@@ -71,89 +226,17 @@ def classify(
 ) -> str:
     """Classify email provider based on MX, CNAME targets, and SPF.
 
-    MX records are checked first (they show where mail is actually delivered).
-    CNAME targets of MX hosts are checked next (to detect hidden hyperscaler usage).
-    If MX points to a known gateway, SPF (including resolved includes) is checked
-    to identify the actual mailbox provider behind the gateway.
-    SPF is only used as fallback when MX alone is inconclusive.
+    Wrapper around classify_with_evidence() for backward compatibility.
     """
-    mx_blob = " ".join(mx_records).lower()
-
-    if any(k in mx_blob for k in MICROSOFT_KEYWORDS):
-        return "microsoft"
-    if any(k in mx_blob for k in GOOGLE_KEYWORDS):
-        return "google"
-    if any(k in mx_blob for k in INFOMANIAK_KEYWORDS):
-        return "infomaniak"
-    if any(k in mx_blob for k in AWS_KEYWORDS):
-        return "aws"
-
-    if mx_records and mx_cnames:
-        cname_blob = " ".join(mx_cnames.values()).lower()
-        if any(k in cname_blob for k in MICROSOFT_KEYWORDS):
-            return "microsoft"
-        if any(k in cname_blob for k in GOOGLE_KEYWORDS):
-            return "google"
-        if any(k in cname_blob for k in INFOMANIAK_KEYWORDS):
-            return "infomaniak"
-        if any(k in cname_blob for k in AWS_KEYWORDS):
-            return "aws"
-
-    if mx_records and detect_gateway(mx_records):
-        spf_blob = (spf_record or "").lower()
-        provider = _check_spf_for_provider(spf_blob)
-        if not provider and resolved_spf:
-            provider = _check_spf_for_provider(resolved_spf.lower())
-        if provider:
-            return provider
-        # No hyperscaler in SPF — check DKIM/autodiscover for backend provider
-        dkim_provider = classify_from_dkim(dkim)
-        if dkim_provider:
-            return dkim_provider
-        ad_provider = classify_from_autodiscover(autodiscover)
-        if ad_provider:
-            return ad_provider
-        # Gateway relays to independent, fall through
-
-    if mx_records:
-        if mx_asns and mx_asns & SWISS_ISP_ASNS.keys():
-            # Check DKIM/autodiscover for hyperscaler backend behind Swiss ISP relay
-            dkim_provider = classify_from_dkim(dkim)
-            if dkim_provider:
-                return dkim_provider
-            ad_provider = classify_from_autodiscover(autodiscover)
-            if ad_provider:
-                return ad_provider
-            spf_blob = (spf_record or "").lower()
-            provider = _check_spf_for_provider(spf_blob)
-            if not provider and resolved_spf:
-                provider = _check_spf_for_provider(resolved_spf.lower())
-            if provider:
-                return provider
-            return "swiss-isp"
-        # Check DKIM/autodiscover for hyperscaler backend behind independent MX
-        dkim_provider = classify_from_dkim(dkim)
-        if dkim_provider:
-            return dkim_provider
-        ad_provider = classify_from_autodiscover(autodiscover)
-        if ad_provider:
-            return ad_provider
-        spf_blob = (spf_record or "").lower()
-        provider = _check_spf_for_provider(spf_blob)
-        if not provider and resolved_spf:
-            provider = _check_spf_for_provider(resolved_spf.lower())
-        if provider:
-            return provider
-        return "independent"
-
-    spf_blob = (spf_record or "").lower()
-    provider = _check_spf_for_provider(spf_blob)
-    if not provider and resolved_spf:
-        provider = _check_spf_for_provider(resolved_spf.lower())
-    if provider:
-        return provider
-
-    return "unknown"
+    return classify_with_evidence(
+        mx_records,
+        spf_record,
+        mx_cnames=mx_cnames,
+        mx_asns=mx_asns,
+        resolved_spf=resolved_spf,
+        autodiscover=autodiscover,
+        dkim=dkim,
+    ).provider
 
 
 def classify_from_mx(mx_records: list[str]) -> str | None:

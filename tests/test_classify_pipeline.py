@@ -49,6 +49,14 @@ class TestClassifyMunicipality:
 
         assert result["provider"] == "microsoft"
         assert result["domain"] == "bern.ch"
+        assert "classification_confidence" in result
+        assert isinstance(result["classification_confidence"], float)
+        assert "classification_signals" in result
+        assert len(result["classification_signals"]) > 0
+        assert any(
+            s["source"] == "mx" and s["provider"] == "microsoft"
+            for s in result["classification_signals"]
+        )
 
     async def test_no_domain_is_unknown(self):
         entry = {"bfs": "999", "name": "Test", "canton": "Test", "domain": ""}
@@ -99,6 +107,8 @@ class TestClassifyMunicipality:
 
         assert result["provider"] == "microsoft"
         assert result["gateway"] == "seppmail"
+        assert "classification_confidence" in result
+        assert "classification_signals" in result
 
 
 # ── smtp_banner_batch() ──────────────────────────────────────────────

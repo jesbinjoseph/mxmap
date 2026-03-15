@@ -825,3 +825,181 @@ class TestRun:
         assert "high_confidence_pct" in report
         assert "quality_passed" in report
         assert report["quality_passed"] is True
+
+
+# ── Evidence-based scoring ────────────────────────────────────────
+
+
+class TestScoreEntryWithEvidence:
+    def test_uses_classification_confidence_as_base(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "bern.ch",
+                "mx": ["bern-ch.mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "classification_confidence": 100.0,
+                "classification_signals": [
+                    {
+                        "source": "mx",
+                        "provider": "microsoft",
+                        "weight": 1.0,
+                        "detail": "MX matches microsoft",
+                    },
+                    {
+                        "source": "spf",
+                        "provider": "microsoft",
+                        "weight": 0.75,
+                        "detail": "SPF matches microsoft",
+                    },
+                ],
+            }
+        )
+        assert result["score"] == 100
+
+    def test_legacy_path_without_confidence(self):
+        """Entries without classification_confidence use the old scoring."""
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "bern.ch",
+                "mx": ["bern-ch.mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+            }
+        )
+        assert result["score"] == 90
+        assert "mx_spf_match" in result["flags"]
+
+    def test_signal_conflict_penalty(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:_spf.google.com -all",
+                "bfs": "9000",
+                "classification_confidence": 80.0,
+                "classification_signals": [
+                    {
+                        "source": "mx",
+                        "provider": "microsoft",
+                        "weight": 1.0,
+                        "detail": "test",
+                    },
+                    {
+                        "source": "spf",
+                        "provider": "google",
+                        "weight": 0.75,
+                        "detail": "test",
+                    },
+                ],
+            }
+        )
+        assert "signal_conflict" in result["flags"]
+        assert result["score"] < 80  # penalty applied
+
+    def test_no_conflict_penalty_without_signals(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+            }
+        )
+        assert "signal_conflict" not in result["flags"]
+
+    def test_smtp_confirms_from_signals(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.protection.outlook.com"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "smtp_banner": "220 mail.protection.outlook.com Microsoft ESMTP MAIL Service ready",
+                "classification_confidence": 90.0,
+                "classification_signals": [
+                    {
+                        "source": "mx",
+                        "provider": "microsoft",
+                        "weight": 1.0,
+                        "detail": "test",
+                    },
+                    {
+                        "source": "smtp",
+                        "provider": "microsoft",
+                        "weight": 0.50,
+                        "detail": "test",
+                    },
+                ],
+            }
+        )
+        assert "smtp_confirms" in result["flags"]
+
+    def test_dkim_confirms_from_signals(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.example.ch"],
+                "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                "bfs": "9000",
+                "dkim": {"microsoft": "selector1-test._domainkey.test.onmicrosoft.com"},
+                "classification_confidence": 85.0,
+                "classification_signals": [
+                    {
+                        "source": "spf",
+                        "provider": "microsoft",
+                        "weight": 0.75,
+                        "detail": "test",
+                    },
+                    {
+                        "source": "dkim",
+                        "provider": "microsoft",
+                        "weight": 0.85,
+                        "detail": "test",
+                    },
+                ],
+            }
+        )
+        assert "dkim_confirms" in result["flags"]
+
+    def test_tenant_confirms_from_signals(self):
+        result = score_entry(
+            {
+                "provider": "microsoft",
+                "domain": "test.ch",
+                "mx": ["mail.example.ch"],
+                "spf": "",
+                "bfs": "9000",
+                "tenant_check": {"microsoft": "Managed"},
+                "classification_confidence": 50.0,
+                "classification_signals": [
+                    {
+                        "source": "tenant",
+                        "provider": "microsoft",
+                        "weight": 0.50,
+                        "detail": "test",
+                    },
+                ],
+            }
+        )
+        assert "tenant_confirms" in result["flags"]
+
+    def test_unknown_still_capped_at_25(self):
+        result = score_entry(
+            {
+                "provider": "unknown",
+                "domain": "test.ch",
+                "mx": [],
+                "spf": "",
+                "bfs": "9000",
+                "classification_confidence": 0.0,
+                "classification_signals": [],
+            }
+        )
+        assert result["score"] <= 25

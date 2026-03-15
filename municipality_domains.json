@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-14T14:18:40Z",
+  "generated": "2026-03-14T20:29:32Z",
   "total": 2110,
   "municipalities": {
     "1": {
@@ -2995,12 +2995,12 @@
       "bfs": "261",
       "name": "Zürich",
       "canton": "Kanton Zürich",
-      "domain": "stadt-zuerich.ch",
+      "domain": "zuerich.ch",
       "source": "override",
-      "confidence": "medium",
+      "confidence": "high",
       "sources_detail": {
         "override": [
-          "stadt-zuerich.ch"
+          "zuerich.ch"
         ]
       },
       "flags": []
@@ -6934,11 +6934,13 @@
       "bfs": "709",
       "name": "Seehof",
       "canton": "Kanton Bern",
-      "domain": "",
+      "domain": "gemeindeseehof.ch",
       "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "override": []
+        "override": [
+          "gemeindeseehof.ch"
+        ]
       },
       "flags": []
     },
@@ -6984,11 +6986,13 @@
       "bfs": "715",
       "name": "Rebévelier",
       "canton": "Kanton Bern",
-      "domain": "",
+      "domain": "bluewin.ch",
       "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "override": []
+        "override": [
+          "bluewin.ch"
+        ]
       },
       "flags": []
     },
@@ -12621,10 +12625,12 @@
       "name": "Châtillon (FR)",
       "canton": "Kanton Freiburg",
       "domain": "chatillon-broye.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "chatillon-broye.ch"
+        ],
         "wikidata": [
           "chatillon-broye.ch"
         ],
@@ -14381,12 +14387,10 @@
       "name": "Muntelier",
       "canton": "Kanton Freiburg",
       "domain": "muntelier.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "muntelier.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "muntelier.ch"
         ],
@@ -21867,12 +21871,10 @@
       "name": "Muntogna da Schons",
       "canton": "Kanton Graubünden",
       "domain": "mdschons.ch",
-      "source": "scrape",
-      "confidence": "high",
+      "source": "wikidata",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [
-          "mdschons.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "mdschons.ch"
         ],
@@ -29005,12 +29007,10 @@
       "name": "Brissago",
       "canton": "Kanton Tessin",
       "domain": "brissago.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "brissago.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "brissago.ch"
         ],

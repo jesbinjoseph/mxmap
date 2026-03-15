@@ -7,9 +7,8 @@ from typing import Any
 import httpx
 
 from mail_sovereignty.classify import (
-    classify,
     classify_from_smtp_banner,
-    detect_gateway,
+    classify_with_evidence,
 )
 from mail_sovereignty.constants import (
     CONCURRENCY,
@@ -69,7 +68,7 @@ async def classify_municipality(
             autodiscover = await lookup_autodiscover(domain) if domain else {}
             dkim = {}
 
-        provider = classify(
+        classification = classify_with_evidence(
             mx,
             spf,
             mx_cnames=mx_cnames,
@@ -78,15 +77,24 @@ async def classify_municipality(
             autodiscover=autodiscover or None,
             dkim=dkim or None,
         )
-        gateway = detect_gateway(mx) if mx else None
 
         result["mx"] = mx
         result["spf"] = spf
-        result["provider"] = provider
+        result["provider"] = classification.provider
+        result["classification_confidence"] = round(classification.confidence * 100, 1)
+        result["classification_signals"] = [
+            {
+                "source": s.source,
+                "provider": s.provider,
+                "weight": s.weight,
+                "detail": s.detail,
+            }
+            for s in classification.signals
+        ]
         if spf_resolved and spf_resolved != spf:
             result["spf_resolved"] = spf_resolved
-        if gateway:
-            result["gateway"] = gateway
+        if classification.gateway:
+            result["gateway"] = classification.gateway
         if mx_cnames:
             result["mx_cnames"] = mx_cnames
         if mx_asns:
@@ -142,6 +150,15 @@ async def smtp_banner_batch(
         provider = classify_from_smtp_banner(banner, ehlo)
         for bfs in mx_host_to_bfs[mx_host]:
             muni[bfs]["smtp_banner"] = banner
+            if provider:
+                smtp_signal = {
+                    "source": "smtp",
+                    "provider": provider,
+                    "weight": 0.50,
+                    "detail": f"SMTP banner matches {provider}",
+                }
+                if "classification_signals" in muni[bfs]:
+                    muni[bfs]["classification_signals"].append(smtp_signal)
             if provider and muni[bfs]["provider"] in ("independent", "unknown"):
                 old = muni[bfs]["provider"]
                 muni[bfs]["provider"] = provider
@@ -200,6 +217,14 @@ async def tenant_check_batch(
             continue
         for bfs in domain_to_bfs[domain]:
             muni[bfs]["tenant_check"] = {"microsoft": ns_type}
+            tenant_signal = {
+                "source": "tenant",
+                "provider": "microsoft",
+                "weight": 0.50,
+                "detail": f"MS tenant check: {ns_type}",
+            }
+            if "classification_signals" in muni[bfs]:
+                muni[bfs]["classification_signals"].append(tenant_signal)
             if muni[bfs]["provider"] == "microsoft":
                 tenant_confirmed += 1
             else:
