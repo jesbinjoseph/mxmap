@@ -41,6 +41,7 @@
   "2893": {"domain": "gde-reigoldswil.ch", "reason": "Gemeinde prefix variant"},
   "2973": {"domain": "ktsh.ch", "reason": "Cantonal domain"},
   "2974": {"domain": "wilchingen.ch", "reason": "lookuped"},
+  "2939": {"domain": "stsh.ch", "reason": "Cantonal domain"},
   "3006": {"domain": "ar.ch", "reason": "Using cantonal mail"},
   "3022": {"domain": "ar.ch", "reason": "Using cantonal mail"},
   "3231": {"domain": "au.ch", "reason": "Manually verified guess"},

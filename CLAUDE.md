@@ -8,7 +8,7 @@ MXmap (mxmap.ch) — an automated system that classifies where ~2100 Swiss munic
 # Setup
 uv sync --group dev
 
-# Run pipeline (three stages, in order)
+# Run pipeline (three stages, in order, but do not run via CLAUDE as it may time out on long-running stages)
 uv run resolve-domains          # Stage 1: resolve municipality domains
 uv run classify-providers       # Stage 2: classify email providers
 uv run validate                 # Stage 3: validate and score results

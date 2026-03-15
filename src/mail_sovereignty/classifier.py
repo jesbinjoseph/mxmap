@@ -33,7 +33,7 @@ _PRIMARY_KINDS = frozenset(
 
 # Signals that can only confirm, not establish, a provider classification
 _CONFIRMATION_ONLY_KINDS = frozenset(
-    {SignalKind.TENANT, SignalKind.TXT_VERIFICATION, SignalKind.ASN}
+    {SignalKind.TENANT, SignalKind.TXT_VERIFICATION, SignalKind.ASN, SignalKind.SPF_IP}
 )
 
 

@@ -284,13 +284,36 @@ class TestAggregate:
         assert result.provider == Provider.INFOMANIAK
 
     def test_swiss_isp_classification(self):
+        """SPF_IP alone is confirmation-only → INDEPENDENT."""
         evidence = [
             _ev(SignalKind.SPF_IP, Provider.SWISS_ISP),
         ]
         result = _aggregate(evidence)
-        assert result.provider == Provider.SWISS_ISP
-        # vote_share=1.0, depth=0.08/0.40=0.20
-        assert result.confidence == pytest.approx(0.20)
+        assert result.provider == Provider.INDEPENDENT
+        assert result.confidence == 0.0
+
+    def test_spf_ip_alone_discarded(self):
+        """SPF_IP(Google) alone → INDEPENDENT (regression test for zuerich.ch)."""
+        evidence = [
+            _ev(SignalKind.SPF_IP, Provider.GOOGLE),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.INDEPENDENT
+        assert result.confidence == 0.0
+
+    def test_spf_ip_with_primary_kept(self):
+        """MX(Google) + SPF_IP(Google) → Google (SPF_IP kept as confirmation)."""
+        evidence = [
+            _ev(SignalKind.MX, Provider.GOOGLE),
+            _ev(SignalKind.SPF_IP, Provider.GOOGLE),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.GOOGLE
+        # vote_share=1.0, depth=(0.20+0.08)/0.40=0.70
+        expected = min(
+            1.0, (WEIGHTS[SignalKind.MX] + WEIGHTS[SignalKind.SPF_IP]) / 0.40
+        )
+        assert result.confidence == pytest.approx(expected)
 
     def test_autodiscover_is_primary_signal(self):
         """Autodiscover alone establishes a provider (not INDEPENDENT)."""
@@ -470,7 +493,7 @@ class TestClassify:
         assert result.provider == Provider.INFOMANIAK
 
     async def test_swiss_isp_scenario(self):
-        """Swiss ISP detected via SPF ip4 ASN → SWISS_ISP."""
+        """Swiss ISP detected via SPF_IP alone → INDEPENDENT (confirmation-only)."""
         spf_ip_ev = [
             Evidence(
                 kind=SignalKind.SPF_IP,
@@ -484,10 +507,10 @@ class TestClassify:
         with _patch_all_probes(probe_spf_ip=spf_ip_ev):
             result = await classify("example.com")
 
-        assert result.provider == Provider.SWISS_ISP
+        assert result.provider == Provider.INDEPENDENT
 
     async def test_tenant_confirmation_only_in_classify(self):
-        """Domain with Swiss ISP SPF IPs + positive M365 tenant → must NOT classify as MS365."""
+        """Domain with Swiss ISP SPF IPs + positive M365 tenant → both confirmation-only, both discarded → INDEPENDENT."""
         spf_ip_ev = [
             Evidence(
                 kind=SignalKind.SPF_IP,
@@ -510,9 +533,8 @@ class TestClassify:
         with _patch_all_probes(probe_spf_ip=spf_ip_ev, probe_tenant=tenant_ev):
             result = await classify("example.com")
 
-        # Tenant evidence for MS365 should be discarded (no MS365 primary signals)
-        assert result.provider != Provider.MS365
-        assert result.provider == Provider.SWISS_ISP
+        # Both SPF_IP and TENANT are confirmation-only → all discarded → INDEPENDENT
+        assert result.provider == Provider.INDEPENDENT
 
     async def test_tenant_confirmation_with_ms365_primary(self):
         """Domain with MX→outlook + positive M365 tenant → MS365 with boosted confidence."""

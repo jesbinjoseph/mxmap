@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-14T20:29:32Z",
+  "generated": "2026-03-15T20:40:23Z",
   "total": 2110,
   "municipalities": {
     "1": {
@@ -4014,7 +4014,9 @@
         ],
         "guess": [
           "biel-bienne.ch",
-          "bielbienne.ch"
+          "bielbienne.ch",
+          "bienne.ch",
+          "stadt-biel.ch"
         ]
       },
       "flags": []
@@ -4392,8 +4394,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "hasle.ch",
-          "schulehasle.ch"
+          "hasle.ch"
         ],
         "wikidata": [
           "hasle.ch"
@@ -5212,10 +5213,12 @@
       "name": "Bätterkinden",
       "canton": "Kanton Bern",
       "domain": "baetterkinden.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "baetterkinden.ch"
+        ],
         "wikidata": [
           "baetterkinden.ch"
         ],
@@ -5380,10 +5383,12 @@
       "name": "Utzenstorf",
       "canton": "Kanton Bern",
       "domain": "utzenstorf.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "utzenstorf.ch"
+        ],
         "wikidata": [
           "utzenstorf.ch"
         ],
@@ -7230,10 +7235,12 @@
       "name": "Jens",
       "canton": "Kanton Bern",
       "domain": "jens.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "jens.ch"
+        ],
         "wikidata": [
           "jens.ch"
         ],
@@ -7483,10 +7490,12 @@
       "name": "Täuffelen",
       "canton": "Kanton Bern",
       "domain": "taeuffelen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "taeuffelen.ch"
+        ],
         "wikidata": [
           "taeuffelen.ch"
         ],
@@ -7555,10 +7564,12 @@
       "name": "Därstetten",
       "canton": "Kanton Bern",
       "domain": "daerstetten.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "daerstetten.ch"
+        ],
         "wikidata": [
           "daerstetten.ch"
         ],
@@ -7786,10 +7797,12 @@
       "name": "Schattenhalb",
       "canton": "Kanton Bern",
       "domain": "schattenhalb.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "schattenhalb.ch"
+        ],
         "wikidata": [
           "schattenhalb.ch"
         ],
@@ -7842,10 +7855,12 @@
       "name": "St. Stephan",
       "canton": "Kanton Bern",
       "domain": "ststephan.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "ststephan.ch"
+        ],
         "wikidata": [
           "ststephan.ch"
         ],
@@ -9048,10 +9063,12 @@
       "name": "Rüegsau",
       "canton": "Kanton Bern",
       "domain": "ruegsau.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "ruegsau.ch"
+        ],
         "wikidata": [
           "ruegsau.ch"
         ],
@@ -9531,10 +9548,12 @@
       "name": "Flühli",
       "canton": "",
       "domain": "fluehli.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "fluehli.ch"
+        ],
         "wikidata": [
           "fluehli.ch"
         ],
@@ -10509,10 +10528,12 @@
       "name": "Ruswil",
       "canton": "",
       "domain": "ruswil.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "ruswil.ch"
+        ],
         "wikidata": [
           "ruswil.ch"
         ],
@@ -10623,10 +10644,12 @@
       "name": "Wolhusen",
       "canton": "",
       "domain": "wolhusen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "wolhusen.ch"
+        ],
         "wikidata": [
           "wolhusen.ch"
         ],
@@ -10662,10 +10685,12 @@
       "name": "Altbüron",
       "canton": "Kanton Luzern",
       "domain": "altbueron.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "altbueron.ch"
+        ],
         "wikidata": [
           "altbueron.ch"
         ],
@@ -11039,10 +11064,12 @@
       "name": "Willisau",
       "canton": "Kanton Luzern",
       "domain": "willisau.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "willisau.ch"
+        ],
         "wikidata": [
           "willisau.ch"
         ],
@@ -12102,7 +12129,8 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "lungern.ch"
+          "lungern.ch",
+          "wahimana.ch"
         ],
         "wikidata": [
           "lungern.ch"
@@ -13741,10 +13769,12 @@
       "name": "Belfaux",
       "canton": "Kanton Freiburg",
       "domain": "belfaux.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "belfaux.ch"
+        ],
         "wikidata": [
           "belfaux.ch"
         ],
@@ -14387,10 +14417,12 @@
       "name": "Muntelier",
       "canton": "Kanton Freiburg",
       "domain": "muntelier.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "muntelier.ch"
+        ],
         "wikidata": [
           "muntelier.ch"
         ],
@@ -17170,10 +17202,12 @@
       "name": "Ettingen",
       "canton": "Kanton Basel-Landschaft",
       "domain": "ettingen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "ettingen.ch"
+        ],
         "wikidata": [
           "ettingen.ch"
         ],
@@ -21217,6 +21251,7 @@
           "vazobervaz.ch"
         ],
         "guess": [
+          "vaz.ch",
           "vazobervaz.ch"
         ]
       },
@@ -21235,7 +21270,8 @@
           "lantsch-lenz.ch"
         ],
         "guess": [
-          "lantsch-lenz.ch"
+          "lantsch-lenz.ch",
+          "lenz.ch"
         ]
       },
       "flags": []
@@ -21273,7 +21309,8 @@
           "albula-alvra.ch"
         ],
         "guess": [
-          "albula-alvra.ch"
+          "albula-alvra.ch",
+          "albula.gr.ch"
         ]
       },
       "flags": []
@@ -21493,7 +21530,9 @@
           "ilanz-glion.ch"
         ],
         "guess": [
-          "ilanz-glion.ch"
+          "glion.ch",
+          "ilanz-glion.ch",
+          "ilanz.ch"
         ]
       },
       "flags": []
@@ -21871,10 +21910,12 @@
       "name": "Muntogna da Schons",
       "canton": "Kanton Graubünden",
       "domain": "mdschons.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "mdschons.ch"
+        ],
         "wikidata": [
           "mdschons.ch"
         ],
@@ -21917,7 +21958,8 @@
           "domat-ems.ch"
         ],
         "guess": [
-          "domat-ems.ch"
+          "domat-ems.ch",
+          "ems.ch"
         ]
       },
       "flags": []
@@ -22126,17 +22168,24 @@
       "bfs": "3782",
       "name": "Celerina/Schlarigna",
       "canton": "Kanton Graubünden",
-      "domain": "gemeinde-celerina.ch",
-      "source": "wikidata",
+      "domain": "celerina.ch",
+      "source": "scrape",
       "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "celerina.ch"
+        ],
         "wikidata": [
           "gemeinde-celerina.ch"
         ],
-        "guess": []
+        "guess": [
+          "celerina.ch",
+          "gemeinde-celerina.ch"
+        ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "3783": {
       "bfs": "3783",
@@ -23044,13 +23093,16 @@
       "canton": "Kanton Graubünden",
       "domain": "breil.ch",
       "source": "wikidata",
-      "confidence": "medium",
+      "confidence": "high",
       "sources_detail": {
         "scrape": [],
         "wikidata": [
           "breil.ch"
         ],
-        "guess": []
+        "guess": [
+          "breil.ch",
+          "brigels.ch"
+        ]
       },
       "flags": []
     },
@@ -23069,7 +23121,10 @@
           "disentis.ch"
         ],
         "guess": [
-          "disentis-muster.ch"
+          "disentis-muster.ch",
+          "disentis.ch",
+          "must-r.ch",
+          "muster.ch"
         ]
       },
       "flags": []
@@ -26749,8 +26804,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "doettingen.ch",
-          "megura.ch"
+          "doettingen.ch"
         ],
         "wikidata": [
           "doettingen.ch"
@@ -29007,10 +29061,12 @@
       "name": "Brissago",
       "canton": "Kanton Tessin",
       "domain": "brissago.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "brissago.ch"
+        ],
         "wikidata": [
           "brissago.ch"
         ],
@@ -30351,7 +30407,8 @@
           "bosco-gurin.ch"
         ],
         "guess": [
-          "bosco-gurin.ch"
+          "bosco-gurin.ch",
+          "bosco.ch"
         ]
       },
       "flags": []
@@ -34229,12 +34286,10 @@
       "name": "Prangins",
       "canton": "Kanton Waadt",
       "domain": "prangins.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "prangins.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "prangins.ch"
         ],
@@ -35139,10 +35194,12 @@
       "name": "Trey",
       "canton": "Kanton Waadt",
       "domain": "trey.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "trey.ch"
+        ],
         "wikidata": [
           "trey.ch"
         ],

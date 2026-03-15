@@ -7,6 +7,7 @@ import pytest
 
 from mail_sovereignty.pipeline import (
     PROVIDER_OUTPUT_NAMES,
+    _minify_for_frontend,
     _output_provider,
     _serialize_result,
     run,
@@ -248,3 +249,112 @@ class TestPipelineRun:
         assert "counts" in data
         assert data["counts"]["microsoft"] == 1
         assert data["counts"]["unknown"] == 1
+
+    async def test_run_writes_minified_output(self, domains_json, tmp_path):
+        ms_result = ClassificationResult(
+            provider=Provider.MS365,
+            confidence=0.4,
+            evidence=[
+                Evidence(
+                    kind=SignalKind.MX,
+                    provider=Provider.MS365,
+                    weight=WEIGHTS[SignalKind.MX],
+                    detail="MX match",
+                    raw="bern-ch.mail.protection.outlook.com",
+                ),
+            ],
+            mx_hosts=["bern-ch.mail.protection.outlook.com"],
+        )
+
+        async def fake_classify_many(domains, max_concurrency=20):
+            for d in domains:
+                yield d, ms_result
+
+        output_path = tmp_path / "data.json"
+        with patch(
+            "mail_sovereignty.pipeline.classify_many", side_effect=fake_classify_many
+        ):
+            await run(domains_json, output_path)
+
+        mini_path = tmp_path / "data.min.json"
+        assert mini_path.exists()
+
+        raw = mini_path.read_text(encoding="utf-8")
+        # Compact: no newlines
+        assert "\n" not in raw
+
+        mini = json.loads(raw)
+        assert "generated" in mini
+        assert "municipalities" in mini
+        # Top-level fields stripped
+        assert "total" not in mini
+        assert "counts" not in mini
+
+
+class TestMinifyForFrontend:
+    def _make_full_output(self):
+        return {
+            "generated": "2026-01-01T00:00:00Z",
+            "total": 1,
+            "counts": {"microsoft": 1},
+            "municipalities": {
+                "351": {
+                    "bfs": "351",
+                    "name": "Bern",
+                    "canton": "Bern",
+                    "domain": "bern.ch",
+                    "mx": ["bern-ch.mail.protection.outlook.com"],
+                    "spf": "v=spf1 include:spf.protection.outlook.com -all",
+                    "provider": "microsoft",
+                    "classification_confidence": 40.0,
+                    "classification_signals": [
+                        {
+                            "kind": "mx",
+                            "provider": "microsoft",
+                            "weight": 0.4,
+                            "detail": "MX match",
+                        },
+                    ],
+                    "gateway": "seppmail",
+                    "sources_detail": {"scrape": ["bern.ch"]},
+                    "resolve_flags": ["bfs_only"],
+                }
+            },
+        }
+
+    def test_minify_strips_unused_fields(self):
+        full = self._make_full_output()
+        mini = _minify_for_frontend(full)
+
+        entry = mini["municipalities"]["351"]
+        assert "bfs" not in entry
+        assert "canton" not in entry
+        assert "sources_detail" not in entry
+        assert "resolve_flags" not in entry
+
+        # Signal entries lack provider/weight
+        sig = entry["classification_signals"][0]
+        assert "provider" not in sig
+        assert "weight" not in sig
+
+        # Top-level
+        assert "total" not in mini
+        assert "counts" not in mini
+
+    def test_minify_preserves_frontend_fields(self):
+        full = self._make_full_output()
+        mini = _minify_for_frontend(full)
+
+        assert mini["generated"] == "2026-01-01T00:00:00Z"
+        entry = mini["municipalities"]["351"]
+        assert entry["name"] == "Bern"
+        assert entry["domain"] == "bern.ch"
+        assert entry["mx"] == ["bern-ch.mail.protection.outlook.com"]
+        assert entry["spf"] == "v=spf1 include:spf.protection.outlook.com -all"
+        assert entry["provider"] == "microsoft"
+        assert entry["classification_confidence"] == 40.0
+        assert entry["gateway"] == "seppmail"
+
+        sig = entry["classification_signals"][0]
+        assert sig["kind"] == "mx"
+        assert sig["detail"] == "MX match"

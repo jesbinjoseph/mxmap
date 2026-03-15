@@ -16,6 +16,25 @@ PROVIDER_OUTPUT_NAMES: dict[str, str] = {
 }
 
 
+_FRONTEND_FIELDS = {
+    "name", "domain", "mx", "spf", "provider",
+    "classification_confidence", "classification_signals", "gateway",
+}
+
+
+def _minify_for_frontend(full_output: dict[str, Any]) -> dict[str, Any]:
+    """Strip fields the frontend doesn't use, producing a compact payload."""
+    municipalities = {}
+    for bfs, entry in full_output["municipalities"].items():
+        mini = {k: v for k, v in entry.items() if k in _FRONTEND_FIELDS}
+        mini["classification_signals"] = [
+            {"kind": s["kind"], "detail": s["detail"]}
+            for s in entry.get("classification_signals", [])
+        ]
+        municipalities[bfs] = mini
+    return {"generated": full_output["generated"], "municipalities": municipalities}
+
+
 def _output_provider(provider: Provider) -> str:
     """Map Provider enum to output name for data.json."""
     return PROVIDER_OUTPUT_NAMES.get(provider.value, provider.value)
@@ -154,4 +173,12 @@ async def run(domains_path: Path, output_path: Path) -> None:
         json.dump(output, f, ensure_ascii=False, indent=2, separators=(",", ":"))
 
     size_kb = len(json.dumps(output)) / 1024
+
+    mini_output = _minify_for_frontend(output)
+    mini_path = output_path.with_suffix(".min.json")
+    with open(mini_path, "w", encoding="utf-8") as f:
+        json.dump(mini_output, f, ensure_ascii=False, separators=(",", ":"))
+
+    mini_size_kb = mini_path.stat().st_size / 1024
     print(f"\nWritten {output_path} ({size_kb:.0f} KB)")
+    print(f"Written {mini_path} ({mini_size_kb:.0f} KB)")

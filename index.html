@@ -388,7 +388,7 @@ function legendGroupHtml(label, keys, counts) {
 async function loadData() {
   const [topoRes, dataRes] = await Promise.all([
     fetch('https://cdn.jsdelivr.net/npm/swiss-maps@4.7.0/2026/ch-combined.json'),
-    fetch('data.json')
+    fetch('data.min.json')
   ]);
 
   const topo = await topoRes.json();
