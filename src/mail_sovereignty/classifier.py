@@ -7,12 +7,12 @@ import logging
 from collections import defaultdict
 from collections.abc import AsyncIterator
 
+from .dns import lookup_mx
 from .models import ClassificationResult, Evidence, Provider, SignalKind
 from .probes import (
     WEIGHTS,
     _make_resolver,
     detect_gateway,
-    lookup_mx_hosts,
     lookup_spf_raw,
     probe_asn,
     probe_autodiscover,
@@ -132,9 +132,9 @@ async def classify(domain: str) -> ClassificationResult:
     """Classify a domain's mail infrastructure provider via DNS probes."""
     resolver = _make_resolver()
 
-    # Lookup ALL MX hosts first (for downstream probes), then pattern-match
-    all_mx_hosts = await lookup_mx_hosts(domain, resolver)
-    mx_evidence = await probe_mx(domain, resolver)
+    # Lookup ALL MX hosts first (robust, multi-resolver), then pattern-match
+    all_mx_hosts = await lookup_mx(domain)
+    mx_evidence = probe_mx(all_mx_hosts)
 
     # Gateway detection (sync, no I/O)
     gateway = detect_gateway(all_mx_hosts)

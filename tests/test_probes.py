@@ -15,7 +15,6 @@ from mail_sovereignty.probes import (
     WEIGHTS,
     _make_resolver,
     detect_gateway,
-    lookup_mx_hosts,
     lookup_spf_raw,
     probe_asn,
     probe_autodiscover,
@@ -80,32 +79,6 @@ class TestWeights:
             assert kind in WEIGHTS, f"{kind} missing from WEIGHTS"
 
 
-class TestLookupMxHosts:
-    async def test_returns_all_hosts(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _mx_rdata("mail.stadtluzern.ch."),
-            _mx_rdata("aspmx.l.google.com."),
-        ]
-        hosts = await lookup_mx_hosts("example.com", resolver)
-        assert hosts == ["mail.stadtluzern.ch", "aspmx.l.google.com"]
-
-    async def test_returns_unmatched_hosts(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _mx_rdata("mr01a.rzeins.ch."),
-            _mx_rdata("mr02b.rzeins.ch."),
-        ]
-        hosts = await lookup_mx_hosts("unteriberg.ch", resolver)
-        assert hosts == ["mr01a.rzeins.ch", "mr02b.rzeins.ch"]
-
-    async def test_dns_error_returns_empty(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException("NXDOMAIN")
-        hosts = await lookup_mx_hosts("example.com", resolver)
-        assert hosts == []
-
-
 class TestLookupSpfRaw:
     async def test_returns_spf_record(self):
         resolver = _mock_resolver()
@@ -129,54 +102,34 @@ class TestLookupSpfRaw:
 
 
 class TestProbeMx:
-    async def test_ms365_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _mx_rdata("example-com.mail.protection.outlook.com.")
-        ]
-        results = await probe_mx("example.com", resolver)
+    def test_ms365_hit(self):
+        results = probe_mx(["example-com.mail.protection.outlook.com"])
         assert len(results) == 1
         assert results[0].provider == Provider.MS365
         assert results[0].kind == SignalKind.MX
         assert results[0].weight == WEIGHTS[SignalKind.MX]
 
-    async def test_google_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [_mx_rdata("aspmx.l.google.com.")]
-        results = await probe_mx("example.com", resolver)
+    def test_google_hit(self):
+        results = probe_mx(["aspmx.l.google.com"])
         assert len(results) == 1
         assert results[0].provider == Provider.GOOGLE
 
-    async def test_infomaniak_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [_mx_rdata("mxpool.infomaniak.com.")]
-        results = await probe_mx("example.com", resolver)
+    def test_infomaniak_hit(self):
+        results = probe_mx(["mxpool.infomaniak.com"])
         assert len(results) == 1
         assert results[0].provider == Provider.INFOMANIAK
 
-    async def test_smtp_google_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [_mx_rdata("smtp.google.com.")]
-        results = await probe_mx("example.com", resolver)
+    def test_smtp_google_hit(self):
+        results = probe_mx(["smtp.google.com"])
         assert len(results) == 1
         assert results[0].provider == Provider.GOOGLE
 
-    async def test_no_match(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [_mx_rdata("mx.custom-host.ch.")]
-        results = await probe_mx("example.com", resolver)
+    def test_no_match(self):
+        results = probe_mx(["mx.custom-host.ch"])
         assert len(results) == 0
 
-    async def test_dns_error(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException("NXDOMAIN")
-        results = await probe_mx("example.com", resolver)
-        assert results == []
-
-    async def test_timeout(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.Timeout()
-        results = await probe_mx("example.com", resolver)
+    def test_empty_hosts(self):
+        results = probe_mx([])
         assert results == []
 
 

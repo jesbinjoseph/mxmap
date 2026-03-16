@@ -51,17 +51,6 @@ def _make_resolver() -> dns.asyncresolver.Resolver:
     return resolver
 
 
-async def lookup_mx_hosts(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[str]:
-    """Return ALL MX hostnames for a domain, regardless of provider matching."""
-    try:
-        answer = await resolver.resolve(domain, "MX")
-    except (dns.exception.DNSException, Exception):
-        return []
-    return [str(rdata.exchange).rstrip(".").lower() for rdata in answer]
-
-
 async def lookup_spf_raw(domain: str, resolver: dns.asyncresolver.Resolver) -> str:
     """Return the raw SPF (v=spf1) TXT record for a domain, or empty string."""
     try:
@@ -75,15 +64,9 @@ async def lookup_spf_raw(domain: str, resolver: dns.asyncresolver.Resolver) -> s
     return ""
 
 
-async def probe_mx(domain: str, resolver: dns.asyncresolver.Resolver) -> list[Evidence]:
-    """Query MX records and match hostnames against provider patterns."""
+def probe_mx(mx_hosts: list[str]) -> list[Evidence]:
+    """Match pre-fetched MX hostnames against provider patterns."""
     results: list[Evidence] = []
-    try:
-        answer = await resolver.resolve(domain, "MX")
-    except (dns.exception.DNSException, Exception):
-        return results
-
-    mx_hosts = [str(rdata.exchange).rstrip(".").lower() for rdata in answer]
     for host in mx_hosts:
         for sig in SIGNATURES:
             if match_patterns(host, sig.mx_patterns):

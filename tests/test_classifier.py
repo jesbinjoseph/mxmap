@@ -1,6 +1,6 @@
 """Tests for classifier: _aggregate, classify, and classify_many."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -44,8 +44,10 @@ def _patch_all_probes(**overrides):
     gateway = overrides.get("detect_gateway", None)
     spf_raw = overrides.get("lookup_spf_raw", "")
 
-    # lookup_mx_hosts: default derives from probe_mx evidence raw values
-    if "lookup_mx_hosts" in overrides:
+    # lookup_mx: default derives from probe_mx evidence raw values
+    if "lookup_mx" in overrides:
+        mx_hosts = overrides["lookup_mx"]
+    elif "lookup_mx_hosts" in overrides:
         mx_hosts = overrides["lookup_mx_hosts"]
     else:
         mx_hosts = [e.raw for e in patches["probe_mx"]]
@@ -56,14 +58,13 @@ def _patch_all_probes(**overrides):
     def _ctx():
         with (
             patch(
-                "mail_sovereignty.classifier.lookup_mx_hosts",
+                "mail_sovereignty.classifier.lookup_mx",
                 new_callable=AsyncMock,
                 return_value=mx_hosts,
             ),
             patch(
                 "mail_sovereignty.classifier.probe_mx",
-                new_callable=AsyncMock,
-                return_value=patches["probe_mx"],
+                new=MagicMock(return_value=patches["probe_mx"]),
             ),
             patch(
                 "mail_sovereignty.classifier.probe_spf",
@@ -565,7 +566,7 @@ class TestClassify:
         assert result.confidence == pytest.approx(0.75)
 
     async def test_classify_passes_mx_hosts_to_cname_chain(self):
-        """cname_chain should receive hosts from lookup_mx_hosts, not from MX evidence."""
+        """cname_chain should receive hosts from lookup_mx, not from MX evidence."""
         mx_ev = [
             Evidence(
                 kind=SignalKind.MX,
@@ -580,14 +581,13 @@ class TestClassify:
 
         with (
             patch(
-                "mail_sovereignty.classifier.lookup_mx_hosts",
+                "mail_sovereignty.classifier.lookup_mx",
                 new_callable=AsyncMock,
                 return_value=all_mx_hosts,
             ),
             patch(
                 "mail_sovereignty.classifier.probe_mx",
-                new_callable=AsyncMock,
-                return_value=mx_ev,
+                new=MagicMock(return_value=mx_ev),
             ),
             patch(
                 "mail_sovereignty.classifier.probe_spf",
@@ -649,7 +649,7 @@ class TestClassify:
         assert call_args[0][1] == all_mx_hosts
 
     async def test_classify_populates_mx_hosts(self):
-        """result.mx_hosts should come from lookup_mx_hosts, not from MX evidence."""
+        """result.mx_hosts should come from lookup_mx, not from MX evidence."""
         mx_ev = [
             Evidence(
                 kind=SignalKind.MX,
@@ -664,7 +664,7 @@ class TestClassify:
             "mail.stadtluzern.ch",
         ]
 
-        with _patch_all_probes(probe_mx=mx_ev, lookup_mx_hosts=all_mx_hosts):
+        with _patch_all_probes(probe_mx=mx_ev, lookup_mx=all_mx_hosts):
             result = await classify("example.com")
 
         assert result.mx_hosts == all_mx_hosts
