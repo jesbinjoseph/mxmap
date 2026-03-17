@@ -123,13 +123,19 @@
     display: inline-block; padding: 0 5px; border-radius: 3px;
     font-size: 10px; font-weight: 600; line-height: 1.6;
   }
-  .cat-badge.hyperscaler { background: #fde8e8; color: #E83838; }
-  .cat-badge.swiss { background: #e0f5f1; color: #10B898; }
+  .cat-badge.hyperscaler { background: #fde8e8; color: #b2182b; }
+  .cat-badge.swiss { background: #e0edf5; color: #2166ac; }
   .cat-badge.foreign { background: #fef3c7; color: #b45309; }
   .cat-badge.unknown { background: #f3f4f6; color: #6b7280; }
   .legend-group { margin-top: 8px; }
   .legend-group:first-child { margin-top: 4px; }
   .legend-group-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; display: block; margin-bottom: 2px; }
+  .color-toggle {
+    display: block; margin-top: 8px; padding: 3px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 500; cursor: pointer;
+    background: #f3f4f6; border: 1px solid #d1d5db; color: #374151;
+  }
+  .color-toggle:hover { background: #e5e7eb; }
 </style>
 </head>
 <body>
@@ -180,10 +186,17 @@ document.addEventListener('DOMContentLoaded', function () {
 if (!CSS.supports('height', '100dvh')) {
   document.body.style.height = window.innerHeight + 'px';
 }
-const CATEGORY_COLORS = {
-  'us-cloud':     { high: '#E83838', medium: '#F28A8A', low: '#FADADA' },
-  'swiss-based':  { high: '#10B898', medium: '#6DD4B8', low: '#C8EDE3' },
+const COLOR_SCHEMES = {
+  default: {
+    'us-cloud':     { high: '#ec6262', medium: '#d809ef', low: '#f1093f' },
+    'swiss-based':  { high: '#adadad', medium: '#1dec3a', low: '#097355' },
+  },
+  colorblind: {
+    'us-cloud':    { high: '#B35806', medium: '#F1A340', low: '#FEE0B6' },
+    'swiss-based': { high: '#542788', medium: '#998EC3', low: '#D8DAEB' },
+  }
 };
+var CATEGORY_COLORS = COLOR_SCHEMES.default;
 const GRAY = '#BFBFBF';
 
 const LABELS = {
@@ -376,12 +389,33 @@ function toggleLegend() {
   btn.setAttribute('aria-expanded', String(!collapsed));
 }
 
-function legendCategoryHtml(label, colors, count) {
+var muni = {};
+var muniLayer;
+
+function toggleColorScheme() {
+  var isDefault = CATEGORY_COLORS === COLOR_SCHEMES.default;
+  CATEGORY_COLORS = isDefault ? COLOR_SCHEMES.colorblind : COLOR_SCHEMES.default;
+
+  muniLayer.eachLayer(function (layer) {
+    var bfs = String(layer.feature.id);
+    var m = muni[bfs];
+    layer.setStyle({ fillColor: getColor(m) });
+  });
+
+  document.querySelectorAll('.legend-swatch').forEach(function (el) {
+    el.style.background = CATEGORY_COLORS[el.dataset.cat][el.dataset.level];
+  });
+
+  var btn = document.querySelector('.color-toggle');
+  btn.textContent = isDefault ? '\u25D0 Default colors' : '\u25D0 Colorblind mode';
+}
+
+function legendCategoryHtml(label, colors, count, catKey) {
   return `<div class="legend-group">` +
     `<span class="legend-group-label">${label} (${count})</span>` +
-    `<i style="background:${colors.high}"></i>High confidence<br>` +
-    `<i style="background:${colors.medium}"></i>Medium<br>` +
-    `<i style="background:${colors.low}"></i>Low` +
+    `<i class="legend-swatch" data-cat="${catKey}" data-level="high" style="background:${colors.high}"></i>High confidence<br>` +
+    `<i class="legend-swatch" data-cat="${catKey}" data-level="medium" style="background:${colors.medium}"></i>Medium<br>` +
+    `<i class="legend-swatch" data-cat="${catKey}" data-level="low" style="background:${colors.low}"></i>Low` +
     `</div>`;
 }
 
@@ -395,7 +429,7 @@ async function loadData() {
   const dnsData = await dataRes.json();
 
   // Build lookup by BFS number
-  const muni = dnsData.municipalities;
+  muni = dnsData.municipalities;
 
   // Show dataset info
   if (dnsData.generated) {
@@ -430,15 +464,17 @@ async function loadData() {
       '<button class="legend-toggle" aria-label="Toggle legend" aria-expanded="' + (!isMobile) + '">' + (isMobile ? 'Legend \u25B8' : '') + '</button>' +
       '<div class="legend-content">' +
       '<strong>Email Jurisdiction</strong>' +
-      legendCategoryHtml('US Cloud', CATEGORY_COLORS['us-cloud'], catCounts['us-cloud']) +
-      legendCategoryHtml('Swiss Based', CATEGORY_COLORS['swiss-based'], catCounts['swiss-based']) +
+      legendCategoryHtml('US Cloud', CATEGORY_COLORS['us-cloud'], catCounts['us-cloud'], 'us-cloud') +
+      legendCategoryHtml('Swiss Based', CATEGORY_COLORS['swiss-based'], catCounts['swiss-based'], 'swiss-based') +
       '<div class="legend-group"><i style="background-image:url(\'' + hatchSvg + '\')"></i>Insufficient data (' + catCounts['insufficient'] + ')</div>' +
+      '<button class="color-toggle" aria-label="Switch to colorblind-safe colors">\u25D0 Colorblind mode</button>' +
       '</div>';
     L.DomEvent.disableClickPropagation(div);
     return div;
   };
   legend.addTo(map);
   document.querySelector('.legend-toggle').addEventListener('click', toggleLegend);
+  document.querySelector('.color-toggle').addEventListener('click', toggleColorScheme);
 
   // Render lakes as a distinct layer
   if (topo.objects.lakes) {
@@ -452,7 +488,7 @@ async function loadData() {
   // Extract municipalities from the topology
   const geojson = topojson.feature(topo, topo.objects.municipalities);
 
-  L.geoJSON(geojson, {
+  muniLayer = L.geoJSON(geojson, {
     style: function (feature) {
       const bfs = String(feature.id);
       const m = muni[bfs];
@@ -473,7 +509,7 @@ async function loadData() {
       const color = getColor(m);
       const cat = effectiveCategory(m);
       const level = confidenceLevel(m.classification_confidence || 0);
-      const textColor = (cat === 'us-cloud' && level === 'high') ? '#fff' : '#333';
+      const textColor = (level === 'high' && cat) ? '#fff' : '#333';
       const label = LABELS[m.provider] || m.provider;
 
       let mxSection = '';
