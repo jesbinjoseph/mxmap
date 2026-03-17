@@ -1,7 +1,6 @@
 """Tests for the classification pipeline."""
 
 import json
-import logging
 from unittest.mock import patch
 
 import pytest
@@ -391,14 +390,11 @@ class TestPipelineLogging:
                 yield d, ms_result
 
         output_path = tmp_path / "data.json"
-        with (
-            patch(
-                "mail_sovereignty.pipeline.classify_many",
-                side_effect=fake_classify_many,
-            ),
-            caplog.at_level(logging.INFO, logger="mail_sovereignty.pipeline"),
+        with patch(
+            "mail_sovereignty.pipeline.classify_many",
+            side_effect=fake_classify_many,
         ):
             await run(domains_json, output_path)
 
         assert any("Classifying" in msg for msg in caplog.messages)
-        assert any("Written" in msg for msg in caplog.messages)
+        assert any("Wrote" in msg for msg in caplog.messages)

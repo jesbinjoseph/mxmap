@@ -1,5 +1,4 @@
 import json
-import logging
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -838,8 +837,7 @@ class TestScrapeErrorLogging:
         client = AsyncMock()
         client.get = AsyncMock(side_effect=ConnectionError("refused"))
 
-        with caplog.at_level(logging.DEBUG, logger="mail_sovereignty.resolve"):
-            result = await scrape_email_domains(client, "fail.ch")
+        result = await scrape_email_domains(client, "fail.ch")
 
         assert result == set()
         assert any("Scrape" in msg and "refused" in msg for msg in caplog.messages)
@@ -912,17 +910,17 @@ class TestResolveRunLogging:
             return_value=httpx.Response(200, json={"results": {"bindings": []}})
         )
 
-        with (
-            patch(
-                "mail_sovereignty.resolve.lookup_mx",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
-            caplog.at_level(logging.WARNING, logger="mail_sovereignty.resolve"),
+        with patch(
+            "mail_sovereignty.resolve.lookup_mx",
+            new_callable=AsyncMock,
+            return_value=[],
         ):
             output = tmp_path / "municipality_domains.json"
             overrides = tmp_path / "overrides.json"
             overrides.write_text("{}")
             await run(output, overrides, date="01-01-2026")
 
-        assert any("BFS-only" in msg for msg in caplog.messages)
+        assert any(
+            "municipalities in BFS but missing from Wikidata" in msg
+            for msg in caplog.messages
+        )

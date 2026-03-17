@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from collections import defaultdict
 from collections.abc import AsyncIterator
+
+from loguru import logger
 
 from .dns import lookup_mx
 from .models import ClassificationResult, Evidence, Provider, SignalKind
@@ -26,8 +27,6 @@ from .probes import (
     probe_tenant,
     probe_txt_verification,
 )
-
-logger = logging.getLogger(__name__)
 
 # Primary signals that can stand on their own
 _PRIMARY_KINDS = frozenset(
@@ -183,7 +182,7 @@ async def classify(domain: str) -> ClassificationResult:
         all_evidence, gateway=gateway, mx_hosts=all_mx_hosts, spf_raw=spf_raw
     )
     logger.debug(
-        "classify(%s): provider=%s confidence=%.2f signals=%d",
+        "classify({}): provider={} confidence={:.2f} signals={}",
         domain,
         result.provider.value,
         result.confidence,
@@ -198,15 +197,18 @@ async def classify_many(
     """Classify multiple domains with bounded concurrency."""
     semaphore = asyncio.Semaphore(max_concurrency)
 
-    async def _bounded(domain: str) -> tuple[str, ClassificationResult]:
+    async def _bounded(domain: str) -> tuple[str, ClassificationResult] | None:
         async with semaphore:
-            result = await classify(domain)
-            return (domain, result)
+            try:
+                result = await classify(domain)
+                return (domain, result)
+            except Exception:
+                logger.exception("Classification failed for {}", domain)
+                return None
 
     tasks = [asyncio.create_task(_bounded(d)) for d in domains]
     for coro in asyncio.as_completed(tasks):
-        try:
-            yield await coro
-        except Exception:
-            logger.exception("Classification failed for a domain, skipping")
+        pair = await coro
+        if pair is None:
             continue
+        yield pair

@@ -1,11 +1,9 @@
 import asyncio
-import logging
 
 import dns.asyncresolver
 import dns.exception
 import dns.resolver
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 _resolvers = None
 
@@ -45,11 +43,17 @@ async def lookup_mx(domain: str) -> list[str]:
             return []
         except _RETRYABLE as e:
             logger.debug(
-                "MX %s: %s on resolver %d, retrying", domain, type(e).__name__, i
+                "MX {}: {} on resolver {}, retrying", domain, type(e).__name__, i
             )
             await asyncio.sleep(0.5)
             continue
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "MX {}: unexpected error on resolver {}: {}",
+                domain,
+                i,
+                type(e).__name__,
+            )
             continue
-    logger.info("MX %s: all resolvers failed", domain)
+    logger.debug("MX {}: all resolvers failed", domain)
     return []

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-16T21:13:39Z",
+  "generated": "2026-03-17T15:04:56Z",
   "total": 2110,
   "municipalities": {
     "1": {
@@ -1756,12 +1756,10 @@
       "name": "Kilchberg (ZH)",
       "canton": "",
       "domain": "kilchberg.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "kilchberg.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "kilchberg.ch"
         ],
@@ -7717,12 +7715,10 @@
       "name": "Guttannen",
       "canton": "Kanton Bern",
       "domain": "guttannen.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "guttannen.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "guttannen.ch"
         ],
@@ -22813,7 +22809,7 @@
       "confidence": "medium",
       "sources_detail": {
         "scrape": [
-          "klibuehni.ch"
+          "handmade-music.ch"
         ],
         "wikidata": [
           "chur.ch"
@@ -28543,6 +28539,7 @@
           "tageo.ch",
           "tagesfamilien-motg.ch",
           "tbweinfelden.ch",
+          "tcberg.ch",
           "tertianum.ch",
           "tg.ch",
           "tg.prosenectute.ch",
@@ -34147,12 +34144,10 @@
       "name": "Genolier",
       "canton": "Kanton Waadt",
       "domain": "genolier.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "genolier.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "genolier.ch"
         ],
@@ -34185,10 +34180,12 @@
       "name": "Givrins",
       "canton": "Kanton Waadt",
       "domain": "givrins.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "givrins.ch"
+        ],
         "wikidata": [
           "givrins.ch"
         ],
@@ -38425,7 +38422,6 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "niluzu.com",
           "randa.ch"
         ],
         "wikidata": [

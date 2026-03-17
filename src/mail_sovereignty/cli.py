@@ -1,21 +1,8 @@
 import argparse
 import asyncio
-import logging
 from pathlib import Path
 
-
-def _configure_logging(verbose: bool = False) -> None:
-    level = logging.DEBUG if verbose else logging.INFO
-    fmt = (
-        "%(asctime)s %(levelname)-5s %(name)s: %(message)s"
-        if verbose
-        else "%(message)s"
-    )
-    datefmt = "%H:%M:%S" if verbose else None
-    logging.basicConfig(level=level, format=fmt, datefmt=datefmt, force=True)
-    if verbose:
-        for name in ("httpx", "httpcore", "dns", "stamina"):
-            logging.getLogger(name).setLevel(logging.WARNING)
+from mail_sovereignty.log import setup as setup_logging
 
 
 def resolve_domains() -> None:
@@ -28,7 +15,7 @@ def resolve_domains() -> None:
     )
     args = parser.parse_args()
 
-    _configure_logging(args.verbose)
+    setup_logging(args.verbose)
 
     asyncio.run(
         run(Path("municipality_domains.json"), Path("overrides.json"), date=args.date)
@@ -46,6 +33,6 @@ def classify_providers() -> None:
     )
     args = parser.parse_args()
 
-    _configure_logging(args.verbose)
+    setup_logging(args.verbose)
 
     asyncio.run(run(Path("municipality_domains.json"), Path("data.json")))

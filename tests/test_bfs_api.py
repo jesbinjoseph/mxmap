@@ -1,5 +1,3 @@
-import logging
-
 import httpx
 import pytest
 import respx
@@ -104,10 +102,9 @@ class TestBfsApiLogging:
         respx.get("https://www.agvchapp.bfs.admin.ch/api/communes/snapshot").mock(
             return_value=_csv_response(SAMPLE_BFS_CSV)
         )
-        with caplog.at_level(logging.INFO, logger="mail_sovereignty.bfs_api"):
-            await fetch_bfs_municipalities(date="01-01-2026")
-        assert any("Fetching BFS" in msg for msg in caplog.messages)
-        assert any("Found 2 municipalities" in msg for msg in caplog.messages)
+        await fetch_bfs_municipalities(date="01-01-2026")
+        assert any("Fetching municipalities from BFS" in msg for msg in caplog.messages)
+        assert any("BFS API: 2 municipalities" in msg for msg in caplog.messages)
 
 
 class TestFetchRetry:

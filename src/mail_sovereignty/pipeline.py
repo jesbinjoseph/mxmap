@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import json
-import logging
 import time
 from pathlib import Path
 from typing import Any
 
+from loguru import logger
+
 from .classifier import classify_many
 from .models import ClassificationResult, Provider
-
-logger = logging.getLogger(__name__)
 
 # Map internal Provider enum values to data.json output names
 PROVIDER_OUTPUT_NAMES: dict[str, str] = {
@@ -95,7 +94,7 @@ async def run(domains_path: Path, output_path: Path) -> None:
     entries = domains_data["municipalities"]
     total = len(entries)
 
-    logger.info("Classifying %d municipalities...", total)
+    logger.info("Classifying {} municipalities", total)
     t0 = time.monotonic()
 
     # Build domain -> entry mapping
@@ -138,29 +137,26 @@ async def run(domains_path: Path, output_path: Path) -> None:
             results[entry["bfs"]] = serialized
 
         done += len(domain_to_entries[domain])
+        counts: dict[str, int] = {}
+        for r in results.values():
+            counts[r["provider"]] = counts.get(r["provider"], 0) + 1
         logger.debug(
-            "classify(%s): provider=%s confidence=%.2f signals=%d",
+            "[{:>4}/{}] {}: provider={} confidence={:.2f} signals={}"
+            " | MS={} Google={} Infomaniak={} AWS={} ISP={} Indep={} ?={}",
+            done,
+            total,
             domain,
             classification.provider.value,
             classification.confidence,
             len(classification.evidence),
+            counts.get("microsoft", 0),
+            counts.get("google", 0),
+            counts.get("infomaniak", 0),
+            counts.get("aws", 0),
+            counts.get("swiss-isp", 0),
+            counts.get("independent", 0),
+            counts.get("unknown", 0),
         )
-        if done % 50 == 0 or done >= total:
-            counts: dict[str, int] = {}
-            for r in results.values():
-                counts[r["provider"]] = counts.get(r["provider"], 0) + 1
-            logger.info(
-                "  [%4d/%d]  MS=%d  Google=%d  Infomaniak=%d  AWS=%d  ISP=%d  Indep=%d  ?=%d",
-                done,
-                total,
-                counts.get("microsoft", 0),
-                counts.get("google", 0),
-                counts.get("infomaniak", 0),
-                counts.get("aws", 0),
-                counts.get("swiss-isp", 0),
-                counts.get("independent", 0),
-                counts.get("unknown", 0),
-            )
 
     # Final counts
     counts = {}
@@ -168,16 +164,16 @@ async def run(domains_path: Path, output_path: Path) -> None:
         counts[r["provider"]] = counts.get(r["provider"], 0) + 1
 
     elapsed = time.monotonic() - t0
-    logger.info("=" * 50)
-    logger.info("RESULTS: %d municipalities classified (%.1fs)", len(results), elapsed)
-    logger.info("  Microsoft/Azure : %5d", counts.get("microsoft", 0))
-    logger.info("  Google/GCP      : %5d", counts.get("google", 0))
-    logger.info("  Infomaniak      : %5d", counts.get("infomaniak", 0))
-    logger.info("  AWS             : %5d", counts.get("aws", 0))
-    logger.info("  Swiss ISP       : %5d", counts.get("swiss-isp", 0))
-    logger.info("  Independent     : %5d", counts.get("independent", 0))
-    logger.info("  Unknown/No MX   : %5d", counts.get("unknown", 0))
-    logger.info("=" * 50)
+    logger.info(
+        "--- Classification: {} municipalities in {:.1f}s ---", len(results), elapsed
+    )
+    logger.info("  Microsoft/Azure  {:>5}", counts.get("microsoft", 0))
+    logger.info("  Google/GCP       {:>5}", counts.get("google", 0))
+    logger.info("  Infomaniak       {:>5}", counts.get("infomaniak", 0))
+    logger.info("  AWS              {:>5}", counts.get("aws", 0))
+    logger.info("  Swiss ISP        {:>5}", counts.get("swiss-isp", 0))
+    logger.info("  Independent      {:>5}", counts.get("independent", 0))
+    logger.info("  Unknown/No MX    {:>5}", counts.get("unknown", 0))
 
     sorted_counts = dict(sorted(counts.items()))
     sorted_munis = dict(sorted(results.items(), key=lambda kv: int(kv[0])))
@@ -200,5 +196,5 @@ async def run(domains_path: Path, output_path: Path) -> None:
         json.dump(mini_output, f, ensure_ascii=False, separators=(",", ":"))
 
     mini_size_kb = mini_path.stat().st_size / 1024
-    logger.info("Written %s (%d KB)", output_path, size_kb)
-    logger.info("Written %s (%d KB)", mini_path, mini_size_kb)
+    logger.info("Wrote {} ({} KB)", output_path, size_kb)
+    logger.info("Wrote {} ({:.0f} KB)", mini_path, mini_size_kb)

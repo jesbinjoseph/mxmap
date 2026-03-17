@@ -1,14 +1,12 @@
 import csv
 import io
-import logging
 import time
 
 import httpx
 import stamina
+from loguru import logger
 
 from mail_sovereignty.constants import BFS_API_URL, CANTON_SHORT_TO_FULL
-
-logger = logging.getLogger(__name__)
 
 
 @stamina.retry(
@@ -52,13 +50,13 @@ async def fetch_bfs_municipalities(date: str | None = None) -> dict[str, dict]:
     if date is None:
         date = time.strftime("%d-%m-%Y")
 
-    logger.info("Fetching BFS municipality list (date=%s)...", date)
+    logger.info("Fetching municipalities from BFS (date={})...".format(date))
 
     async with httpx.AsyncClient(timeout=60) as client:
         t0 = time.monotonic()
         r = await _fetch(client, BFS_API_URL, {"date": date})
         logger.debug(
-            "BFS API response: %d bytes in %.1fs", len(r.text), time.monotonic() - t0
+            "BFS API response: {} bytes in {:.1f}s", len(r.text), time.monotonic() - t0
         )
         entries = _parse_csv_response(r.text)
 
@@ -95,5 +93,5 @@ async def fetch_bfs_municipalities(date: str | None = None) -> dict[str, dict]:
             "canton": canton,
         }
 
-    logger.info("  Found %d municipalities from BFS API", len(municipalities))
+    logger.info("BFS API: {} municipalities", len(municipalities))
     return municipalities

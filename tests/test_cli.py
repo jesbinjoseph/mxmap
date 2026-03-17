@@ -3,23 +3,20 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 from mail_sovereignty.cli import (
-    _configure_logging,
     classify_providers,
     resolve_domains,
 )
+from mail_sovereignty.log import setup as setup_logging
 
 
-class TestConfigureLogging:
-    def test_default_sets_info(self):
-        _configure_logging(verbose=False)
-        assert logging.getLogger().level == logging.INFO
-
-    def test_verbose_sets_debug(self):
-        _configure_logging(verbose=True)
-        assert logging.getLogger().level == logging.DEBUG
+class TestSetupLogging:
+    def test_default_suppresses_noisy_loggers(self):
+        setup_logging(verbose=False)
+        for name in ("httpx", "httpcore", "dns", "stamina"):
+            assert logging.getLogger(name).level == logging.WARNING
 
     def test_verbose_suppresses_noisy_loggers(self):
-        _configure_logging(verbose=True)
+        setup_logging(verbose=True)
         for name in ("httpx", "httpcore", "dns", "stamina"):
             assert logging.getLogger(name).level == logging.WARNING
 
@@ -55,7 +52,6 @@ class TestCli:
             patch("sys.argv", ["resolve-domains", "-v"]),
         ):
             resolve_domains()
-            assert logging.getLogger().level == logging.DEBUG
 
     def test_classify_providers(self):
         with (
@@ -73,4 +69,3 @@ class TestCli:
             patch("sys.argv", ["classify-providers", "--verbose"]),
         ):
             classify_providers()
-            assert logging.getLogger().level == logging.DEBUG
