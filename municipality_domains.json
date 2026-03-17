@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-16T01:31:24Z",
+  "generated": "2026-03-16T21:13:39Z",
   "total": 2110,
   "municipalities": {
     "1": {
@@ -1775,7 +1775,7 @@
       "bfs": "136",
       "name": "Langnau am Albis",
       "canton": "",
-      "domain": "langnau.ch",
+      "domain": "solicom.ch",
       "source": "scrape",
       "confidence": "medium",
       "sources_detail": {
@@ -12130,6 +12130,7 @@
       "sources_detail": {
         "scrape": [
           "lungern.ch",
+          "lungern.ow.ch",
           "wahimana.ch"
         ],
         "wikidata": [
@@ -18710,7 +18711,8 @@
       "sources_detail": {
         "scrape": [
           "gaechlingen.ch",
-          "schule-gaechlingen.ch"
+          "schule-gaechlingen.ch",
+          "srk-schaffhausen.ch"
         ],
         "wikidata": [
           "gaechlingen.ch"
@@ -30805,13 +30807,10 @@
       "name": "Ollon",
       "canton": "Kanton Waadt",
       "domain": "ollon.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "ollon.ch",
-          "vd.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "ollon.ch"
         ],
@@ -31761,12 +31760,10 @@
       "name": "La Sarraz",
       "canton": "Kanton Waadt",
       "domain": "lasarraz.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "lasarraz.ch"
-        ],
+        "scrape": [],
         "wikidata": [
           "lasarraz.ch"
         ],
@@ -34283,10 +34280,12 @@
       "name": "Prangins",
       "canton": "Kanton Waadt",
       "domain": "prangins.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "prangins.ch"
+        ],
         "wikidata": [
           "prangins.ch"
         ],
@@ -37487,10 +37486,12 @@
       "name": "Troistorrents",
       "canton": "Kanton Wallis",
       "domain": "troistorrents.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "troistorrents.ch"
+        ],
         "wikidata": [
           "troistorrents.ch"
         ],

@@ -8,14 +8,14 @@ MXmap (mxmap.ch) — an automated system that classifies where ~2100 Swiss munic
 # Setup
 uv sync --group dev
 
-# Run pipeline (three stages, in order, but do not run via CLAUDE as it may time out on long-running stages)
+# Run pipeline (two stages, in order, but do not run via CLAUDE as it may time out on long-running stages)
 uv run resolve-domains          # Stage 1: resolve municipality domains
 uv run classify-providers       # Stage 2: classify email providers
-uv run validate                 # Stage 3: validate and score results
 
 # Test
 uv run pytest --cov --cov-report=term-missing    # 90% coverage threshold enforced
 uv run pytest tests/test_probes.py -k test_mx     # single test
+uv run pytest tests/test_data_validation.py -v    # data validation (requires JSON files)
 
 # Lint & format
 uv run ruff check src tests
@@ -27,4 +27,3 @@ uv run ruff format src tests
 - `overrides.json` — manual classification corrections with reasons
 - `municipality_domains.json` — intermediate output from resolve stage
 - `data.json` — final classifications served to the frontend
-- `validation_report.json` — scoring details and quality metrics

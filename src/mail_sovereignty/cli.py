@@ -49,17 +49,3 @@ def classify_providers() -> None:
     _configure_logging(args.verbose)
 
     asyncio.run(run(Path("municipality_domains.json"), Path("data.json")))
-
-
-def validate() -> None:
-    from mail_sovereignty.validate import run
-
-    parser = argparse.ArgumentParser(description="Validate classification results")
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable debug logging"
-    )
-    args = parser.parse_args()
-
-    _configure_logging(args.verbose)
-
-    run(Path("data.json"), Path("."), quality_gate=True)

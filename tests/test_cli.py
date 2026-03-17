@@ -6,7 +6,6 @@ from mail_sovereignty.cli import (
     _configure_logging,
     classify_providers,
     resolve_domains,
-    validate,
 )
 
 
@@ -74,22 +73,4 @@ class TestCli:
             patch("sys.argv", ["classify-providers", "--verbose"]),
         ):
             classify_providers()
-            assert logging.getLogger().level == logging.DEBUG
-
-    def test_validate(self):
-        with (
-            patch("mail_sovereignty.validate.run") as mock_run,
-            patch("sys.argv", ["validate"]),
-        ):
-            validate()
-            mock_run.assert_called_once_with(
-                Path("data.json"), Path("."), quality_gate=True
-            )
-
-    def test_validate_verbose(self):
-        with (
-            patch("mail_sovereignty.validate.run"),
-            patch("sys.argv", ["validate", "-v"]),
-        ):
-            validate()
             assert logging.getLogger().level == logging.DEBUG
