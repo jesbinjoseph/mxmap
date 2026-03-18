@@ -86,8 +86,8 @@
 document.addEventListener('DOMContentLoaded', function () {
 const COLOR_SCHEMES = {
   default: {
-    'us-cloud':    { high: '#fa7373', medium: '#ffbc89', low: '#f0ead8' },
-    'swiss-based': { high: '#1cd0aa', medium: '#a8f6cb', low: '#e6edd8' },
+    'us-cloud':    { high: '#fa7373', medium: '#ffbc89', low: '#c7c6c6' },
+    'swiss-based': { high: '#1cd0aa', medium: '#a8f6cb', low: '#c7c6c6' },
     lake: '#7CB8E0',
   },
   colorblind: {
@@ -115,9 +115,9 @@ function effectiveCategory(m) {
 }
 
 function confidenceLevel(confidence) {
-  if (confidence >= 90) return 'high';
-  if (confidence >= 40) return 'medium';
-  if (confidence >= 10) return 'low';
+  if (confidence >= 75) return 'high';
+  if (confidence >= 50) return 'medium';
+  if (confidence >= 25) return 'low';
   return 'insufficient';
 }
 

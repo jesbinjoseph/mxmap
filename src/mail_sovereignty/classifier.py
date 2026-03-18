@@ -1,4 +1,29 @@
-"""Mail sovereignty classifier: aggregate evidence and classify domains."""
+"""Mail sovereignty classifier: aggregate evidence and classify domains.
+
+Two-phase algorithm:
+
+1. **Winner selection** — For each provider that appears in the evidence, sum
+   the weights of its *primary* signals (MX, SPF, DKIM, AUTODISCOVER).  The
+   provider with the highest total wins.  If no provider has any primary
+   signal, the domain is classified as INDEPENDENT.
+
+2. **Confidence scoring** — The winning provider's signal set is matched
+   against a rule chain (see ``_rule_confidence``).  The highest-matching rule
+   sets a base confidence; each additional signal beyond the rule adds a small
+   boost (0.02).  The final score is capped at 1.0.
+
+Signal hierarchy:
+    - **Primary** (MX, SPF, DKIM, AUTODISCOVER): can elect a winner on their
+      own.  MX and SPF are the strongest; DKIM and AUTODISCOVER are weaker but
+      still primary.
+    - **Confirmation-only** (TENANT, ASN, SPF_IP, TXT_VERIFICATION, …): cannot
+      elect a winner alone, but boost confidence when paired with a primary
+      signal from the same provider.
+    - **TENANT** has a special restriction: it is only treated as a
+      confirmation signal when the winning provider is MS365.
+    - **Gateway** (detected from MX hostnames) is not a ``SignalKind``; it
+      participates in rule matching but never contributes to boost.
+"""
 
 from __future__ import annotations
 
@@ -39,7 +64,36 @@ _BOOST_PER_SIGNAL = 0.02
 def _rule_confidence(
     provider: Provider, signals: set[SignalKind], gateway: str | None
 ) -> float:
-    """Rule-based confidence for a winning provider."""
+    """Return confidence for a winning provider using a rule chain.
+
+    Four booleans drive rule selection:
+
+    * ``has_mx``      — MX record matches the winning provider.
+    * ``has_spf``     — SPF record matches the winning provider.
+    * ``has_tenant``  — MS365 tenant confirmed *and* winner is MS365.
+    * ``has_gateway`` — A security gateway was detected from MX hostnames.
+
+    Rule chain (ordered by specificity, first match wins):
+
+    ====  ==========================  ====
+    Rule  Condition                   Base
+    ====  ==========================  ====
+    R1    MX ∧ SPF ∧ TENANT          0.95
+    R2    MX ∧ SPF                   0.90
+    R3    SPF ∧ TENANT ∧ GW          0.90
+    R4    MX ∧ TENANT                0.85
+    R5    SPF ∧ TENANT               0.80
+    R6    SPF ∧ GW                   0.70
+    R7    MX                         0.60
+    R8    SPF                        0.50
+    R9    else                       0.40
+    ====  ==========================  ====
+
+    After the base is selected, each signal in *signals* that was **not**
+    consumed by the matched rule adds ``_BOOST_PER_SIGNAL`` (0.02).  Gateway
+    is never a ``SignalKind`` so it never contributes to boost.  The final
+    value is capped at 1.0.
+    """
     has_mx = SignalKind.MX in signals
     has_spf = SignalKind.SPF in signals
     has_tenant = SignalKind.TENANT in signals and provider == Provider.MS365
@@ -52,6 +106,10 @@ def _rule_confidence(
         base, used = 0.90, {SignalKind.MX, SignalKind.SPF}
     elif has_spf and has_tenant and has_gateway:
         base, used = 0.90, {SignalKind.SPF, SignalKind.TENANT}
+    elif has_mx and has_tenant:
+        base, used = 0.85, {SignalKind.MX, SignalKind.TENANT}
+    elif has_spf and has_tenant:
+        base, used = 0.80, {SignalKind.SPF, SignalKind.TENANT}
     elif has_spf and has_gateway:
         base, used = 0.70, {SignalKind.SPF}
     elif has_mx:
@@ -68,7 +126,17 @@ def _rule_confidence(
 def _independent_confidence(
     mx_hosts: list[str], spf_raw: str, evidence: list[Evidence]
 ) -> float:
-    """Rule-based confidence for INDEPENDENT classification."""
+    """Return confidence for an INDEPENDENT classification.
+
+    Called when no provider wins the primary-signal vote (i.e. no provider
+    has any primary signal).  Confidence is based purely on whether the
+    domain has MX records and/or SPF records at all:
+
+    * MX + SPF present → 0.90 (infrastructure exists, just not a known provider)
+    * MX only          → 0.60
+    * Any evidence     → 0.50
+    * Nothing          → 0.0
+    """
     has_mx = bool(mx_hosts) or any(e.kind == SignalKind.MX for e in evidence)
     has_spf = bool(spf_raw) or any(e.kind == SignalKind.SPF for e in evidence)
 
@@ -89,7 +157,20 @@ def _aggregate(
     mx_hosts: list[str] | None = None,
     spf_raw: str = "",
 ) -> ClassificationResult:
-    """Classify provider by weighted primary vote; confidence from rule-based tiers."""
+    """Aggregate evidence into a single classification result.
+
+    Pipeline:
+
+    1. **Deduplication** — Each ``(provider, kind)`` pair counts once.
+       INDEPENDENT evidence is excluded from the vote.
+    2. **Primary vote** — For each provider, sum the weights of its primary
+       signals (MX, SPF, DKIM, AUTODISCOVER).  The provider with the highest
+       total wins.
+    3. **Confidence** — ``_rule_confidence`` scores the winner; if no winner,
+       ``_independent_confidence`` scores the fallback.
+    4. **Pass-through fields** — ``gateway``, ``mx_hosts``, and ``spf_raw``
+       are attached to the result unchanged.
+    """
     _mx_hosts = mx_hosts or []
 
     # Deduplicate by (provider, kind) — each signal type counts once per provider
@@ -124,7 +205,17 @@ def _aggregate(
 
 
 async def classify(domain: str) -> ClassificationResult:
-    """Classify a domain's mail infrastructure provider via DNS probes."""
+    """Classify a single domain's mail infrastructure provider.
+
+    Orchestrates DNS lookups and concurrent probes:
+
+    1. Resolve all MX hosts via ``lookup_mx`` (multi-resolver, robust).
+    2. Synchronously pattern-match MX hostnames (``probe_mx``) and detect
+       any security gateway (``detect_gateway``).
+    3. Run remaining probes concurrently (SPF, DKIM, DMARC, autodiscover,
+       CNAME chain, SMTP banner, tenant, ASN, TXT verification, SPF IP).
+    4. Aggregate all evidence via ``_aggregate``.
+    """
     # Lookup ALL MX hosts first (robust, multi-resolver), then pattern-match
     all_mx_hosts = await lookup_mx(domain)
     mx_evidence = probe_mx(all_mx_hosts)
@@ -191,7 +282,13 @@ async def classify(domain: str) -> ClassificationResult:
 async def classify_many(
     domains: list[str], max_concurrency: int = 20
 ) -> AsyncIterator[tuple[str, ClassificationResult]]:
-    """Classify multiple domains with bounded concurrency."""
+    """Classify multiple domains with bounded concurrency.
+
+    Uses an ``asyncio.Semaphore`` to cap the number of in-flight
+    ``classify`` calls.  Each domain is isolated: if one raises, it is
+    logged and skipped — other domains continue unaffected.  Results are
+    yielded as ``(domain, ClassificationResult)`` pairs in completion order.
+    """
     semaphore = asyncio.Semaphore(max_concurrency)
 
     async def _bounded(domain: str) -> tuple[str, ClassificationResult] | None:

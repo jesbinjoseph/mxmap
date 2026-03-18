@@ -210,15 +210,38 @@ class TestAggregate:
         assert result.confidence == pytest.approx(0.50)
 
     def test_tenant_with_primary(self):
-        """Tenant evidence with primary signals boosts confidence."""
+        """Tenant evidence with MX primary → MX+TENANT rule."""
         evidence = [
             _ev(SignalKind.MX, Provider.MS365),
             _ev(SignalKind.TENANT, Provider.MS365),
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        # MX-only rule (0.60) + TENANT boost (0.02) = 0.62
-        assert result.confidence == pytest.approx(0.62)
+        # MX+TENANT rule → 0.85
+        assert result.confidence == pytest.approx(0.85)
+
+    def test_spf_tenant_no_gateway(self):
+        """SPF + Tenant without gateway (Le Locle scenario) → 80%."""
+        evidence = [
+            _ev(SignalKind.SPF, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        # SPF+Tenant rule → 0.80
+        assert result.confidence == pytest.approx(0.80)
+
+    def test_spf_tenant_no_gateway_with_extra_signals(self):
+        """Le Locle full scenario: SPF+Tenant+TXT_VERIFICATION → 82%."""
+        evidence = [
+            _ev(SignalKind.SPF, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+            _ev(SignalKind.TXT_VERIFICATION, Provider.MS365),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        # SPF+Tenant rule (0.80) + TXT_VERIFICATION boost (0.02) = 0.82
+        assert result.confidence == pytest.approx(0.82)
 
     def test_tenant_different_provider_no_effect_on_winner(self):
         """MS365 tenant can't pick winner; Google wins via MX primary signal."""
@@ -419,6 +442,43 @@ class TestAggregate:
         result = _aggregate([])
         assert result.spf_raw == ""
 
+    def test_mx_tenant_no_spf(self):
+        """MX + TENANT without SPF → dedicated 0.85 tier."""
+        evidence = [
+            _ev(SignalKind.MX, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert result.confidence == pytest.approx(0.85)
+
+    def test_mx_tenant_no_spf_with_extra(self):
+        """MX + TENANT + DKIM → 0.85 base + 0.02 boost = 0.87."""
+        evidence = [
+            _ev(SignalKind.MX, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+            _ev(SignalKind.DKIM, Provider.MS365),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert result.confidence == pytest.approx(0.87)
+
+    def test_monotonicity_mx_tenant_gte_spf_tenant(self):
+        """MX+TENANT must score >= SPF+TENANT (MX is stronger than SPF)."""
+        mx_tenant = _aggregate(
+            [
+                _ev(SignalKind.MX, Provider.MS365),
+                _ev(SignalKind.TENANT, Provider.MS365),
+            ]
+        )
+        spf_tenant = _aggregate(
+            [
+                _ev(SignalKind.SPF, Provider.MS365),
+                _ev(SignalKind.TENANT, Provider.MS365),
+            ]
+        )
+        assert mx_tenant.confidence >= spf_tenant.confidence
+
 
 class TestClassify:
     async def test_ms365_scenario(self):
@@ -616,8 +676,8 @@ class TestClassify:
             result = await classify("example.com")
 
         assert result.provider == Provider.MS365
-        # MX-only rule (0.60) + TENANT boost (0.02) = 0.62
-        assert result.confidence == pytest.approx(0.62)
+        # MX+TENANT rule → 0.85
+        assert result.confidence == pytest.approx(0.85)
 
     async def test_classify_passes_mx_hosts_to_cname_chain(self):
         """cname_chain should receive hosts from lookup_mx, not from MX evidence."""
