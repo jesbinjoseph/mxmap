@@ -11,8 +11,10 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .toggle-info:hover { background: rgba(255,255,255,0.25); color: #fff; }
 
 #info-bar {
-  background: #f8f9fb; border-bottom: 1px solid #e2e4e8; overflow: hidden; flex-shrink: 0;
+  background: #f0f1f5; border-bottom: 1px solid #d8dae0; overflow: clip; flex-shrink: 0;
+  position: relative; z-index: 1;
   max-height: 600px; padding: 16px 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 #info-bar.collapsed { max-height: 0; padding-top: 0; padding-bottom: 0; }
 

@@ -47,11 +47,9 @@
   <div class="header-left">
     <h1 class="brand">MXmap</h1>
     <span class="beta-badge" title="Beta status, this website may contain errors">beta</span>
-    <span class="separator">|</span>
-    <span class="tagline">M365 Tenants of Swiss Municipalities</span>
+    <nav id="nav"></nav>
   </div>
   <div class="header-right">
-    <nav id="nav"></nav>
     <button class="toggle-info" id="toggle-info" aria-expanded="true" aria-controls="info-bar">About &#9652;</button>
   </div>
 </header>
@@ -178,7 +176,7 @@ async function loadData() {
       return {
         fillColor: getColor(m),
         weight: 0.6,
-        color: '#666',
+        color: '#afafaf',
         fillOpacity: 1
       };
     },

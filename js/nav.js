@@ -1,4 +1,4 @@
-/* nav.js — auto-renders navigation with dropdown overflow menu */
+/* nav.js — auto-renders navigation with pill tabs + dropdown overflow menu */
 (function () {
   var path = window.location.pathname;
   var primary = [
@@ -28,7 +28,7 @@
     return a;
   }
 
-  /* inline primary links (hidden on mobile via CSS) */
+  /* inline primary links as pill tabs (hidden on mobile via CSS) */
   var inlineWrap = document.createElement('span');
   inlineWrap.className = 'nav-primary';
   primary.forEach(function (link) {
