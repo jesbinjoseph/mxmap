@@ -417,12 +417,12 @@ function toggleColorScheme() {
   btn.textContent = isDefault ? '\u25D0 Default colors' : '\u25D0 Colorblind mode';
 }
 
-function legendCategoryHtml(label, colors, count, catKey) {
+function legendCategoryHtml(label, colors, count, catKey, levels) {
   return `<div class="legend-group">` +
     `<span class="legend-group-label">${label} (${count})</span>` +
-    `<i class="legend-swatch" data-cat="${catKey}" data-level="high" style="background:${colors.high}"></i>High confidence<br>` +
-    `<i class="legend-swatch" data-cat="${catKey}" data-level="medium" style="background:${colors.medium}"></i>Medium<br>` +
-    `<i class="legend-swatch" data-cat="${catKey}" data-level="low" style="background:${colors.low}"></i>Low` +
+    `<i class="legend-swatch" data-cat="${catKey}" data-level="high" style="background:${colors.high}"></i>High confidence (${levels.high})<br>` +
+    `<i class="legend-swatch" data-cat="${catKey}" data-level="medium" style="background:${colors.medium}"></i>Medium (${levels.medium})<br>` +
+    `<i class="legend-swatch" data-cat="${catKey}" data-level="low" style="background:${colors.low}"></i>Low (${levels.low})` +
     `</div>`;
 }
 
@@ -445,14 +445,19 @@ async function loadData() {
       'Updated ' + date.toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
   }
 
-  // Count by visual category (only counted if confidence >= 10%)
+  // Count by jurisdiction and confidence level
   const catCounts = { 'us-cloud': 0, 'swiss-based': 0, 'insufficient': 0 };
+  const levelCounts = {
+    'us-cloud': { high: 0, medium: 0, low: 0 },
+    'swiss-based': { high: 0, medium: 0, low: 0 }
+  };
   for (const bfs of Object.keys(muni)) {
     const m = muni[bfs];
     const cat = effectiveCategory(m);
-    const level = confidenceLevel(m ? (m.classification_confidence || 0) : 0);
-    if (cat && level !== 'insufficient') {
+    if (cat) {
       catCounts[cat]++;
+      const level = confidenceLevel(m ? (m.classification_confidence || 0) : 0);
+      if (level !== 'insufficient') levelCounts[cat][level]++;
     } else {
       catCounts['insufficient']++;
     }
@@ -471,8 +476,8 @@ async function loadData() {
       '<button class="legend-toggle" aria-label="Toggle legend" aria-expanded="' + (!isMobile) + '">' + (isMobile ? 'Legend \u25B8' : '') + '</button>' +
       '<div class="legend-content">' +
       '<strong>Email Jurisdiction</strong>' +
-      legendCategoryHtml('US Cloud', CATEGORY_COLORS['us-cloud'], catCounts['us-cloud'], 'us-cloud') +
-      legendCategoryHtml('Swiss Based', CATEGORY_COLORS['swiss-based'], catCounts['swiss-based'], 'swiss-based') +
+      legendCategoryHtml('US Cloud', CATEGORY_COLORS['us-cloud'], catCounts['us-cloud'], 'us-cloud', levelCounts['us-cloud']) +
+      legendCategoryHtml('Swiss Based', CATEGORY_COLORS['swiss-based'], catCounts['swiss-based'], 'swiss-based', levelCounts['swiss-based']) +
       '<div class="legend-group"><i style="background-image:url(\'' + hatchSvg + '\')"></i>Insufficient data (' + catCounts['insufficient'] + ')</div>' +
       '<button class="color-toggle" aria-label="Switch to colorblind-safe colors">\u25D0 Colorblind mode</button>' +
       '</div>';
@@ -501,7 +506,7 @@ async function loadData() {
       const m = muni[bfs];
       return {
         fillColor: getColor(m),
-        weight: 0.5,
+        weight: 0.6,
         color: '#666',
         fillOpacity: 1
       };
