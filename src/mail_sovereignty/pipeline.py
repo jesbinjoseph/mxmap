@@ -161,7 +161,7 @@ async def run(domains_path: Path, output_path: Path) -> None:
             domain,
             classification.provider.value,
             classification.confidence,
-            len(classification.evidence)
+            len(classification.evidence),
         )
 
     # Final counts

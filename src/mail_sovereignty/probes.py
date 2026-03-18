@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import asyncio
 
-import dns.asyncresolver
-import dns.exception
-import dns.rdatatype
-import dns.resolver
 import httpx
 import stamina
 from loguru import logger
 
+from .dns import resolve_robust
 from .models import Evidence, Provider, SignalKind
 from .signatures import (
     GATEWAY_KEYWORDS,
@@ -36,24 +33,10 @@ WEIGHTS: dict[SignalKind, float] = {
 }
 
 
-_shared_cache = dns.resolver.Cache()
-
-
-def _make_resolver() -> dns.asyncresolver.Resolver:
-    """Create a resolver with sensible defaults."""
-    resolver = dns.asyncresolver.Resolver()
-    resolver.nameservers = list(resolver.nameservers) + ["8.8.8.8", "1.1.1.1"]
-    resolver.timeout = 5.0
-    resolver.lifetime = 10.0
-    resolver.cache = _shared_cache
-    return resolver
-
-
-async def lookup_spf_raw(domain: str, resolver: dns.asyncresolver.Resolver) -> str:
+async def lookup_spf_raw(domain: str) -> str:
     """Return the raw SPF (v=spf1) TXT record for a domain, or empty string."""
-    try:
-        answer = await resolver.resolve(domain, "TXT")
-    except (dns.exception.DNSException, Exception):
+    answer = await resolve_robust(domain, "TXT")
+    if answer is None:
         return ""
     for rdata in answer:
         txt = b"".join(rdata.strings).decode("utf-8", errors="ignore")
@@ -80,14 +63,11 @@ def probe_mx(mx_hosts: list[str]) -> list[Evidence]:
     return results
 
 
-async def probe_spf(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_spf(domain: str) -> list[Evidence]:
     """Query TXT for SPF and match include: directives."""
     results: list[Evidence] = []
-    try:
-        answer = await resolver.resolve(domain, "TXT")
-    except (dns.exception.DNSException, Exception):
+    answer = await resolve_robust(domain, "TXT")
+    if answer is None:
         return results
 
     for rdata in answer:
@@ -112,17 +92,14 @@ async def probe_spf(
     return results
 
 
-async def probe_dkim(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_dkim(domain: str) -> list[Evidence]:
     """Query DKIM selector CNAMEs and match targets."""
     results: list[Evidence] = []
     for sig in SIGNATURES:
         for selector in sig.dkim_selectors:
             qname = f"{selector}._domainkey.{domain}"
-            try:
-                answer = await resolver.resolve(qname, "CNAME")
-            except (dns.exception.DNSException, Exception):
+            answer = await resolve_robust(qname, "CNAME")
+            if answer is None:
                 continue
             for rdata in answer:
                 target = str(rdata.target).rstrip(".").lower()
@@ -139,14 +116,11 @@ async def probe_dkim(
     return results
 
 
-async def probe_dmarc(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_dmarc(domain: str) -> list[Evidence]:
     """Query DMARC TXT record and match against provider patterns."""
     results: list[Evidence] = []
-    try:
-        answer = await resolver.resolve(f"_dmarc.{domain}", "TXT")
-    except (dns.exception.DNSException, Exception):
+    answer = await resolve_robust(f"_dmarc.{domain}", "TXT")
+    if answer is None:
         return results
 
     for rdata in answer:
@@ -165,15 +139,13 @@ async def probe_dmarc(
     return results
 
 
-async def probe_autodiscover(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_autodiscover(domain: str) -> list[Evidence]:
     """Query autodiscover CNAME and SRV records."""
     results: list[Evidence] = []
 
     # CNAME probe
-    try:
-        answer = await resolver.resolve(f"autodiscover.{domain}", "CNAME")
+    answer = await resolve_robust(f"autodiscover.{domain}", "CNAME")
+    if answer is not None:
         for rdata in answer:
             target = str(rdata.target).rstrip(".").lower()
             for sig in SIGNATURES:
@@ -187,14 +159,10 @@ async def probe_autodiscover(
                             raw=target,
                         )
                     )
-    except dns.exception.DNSException:
-        pass
-    except Exception as e:
-        logger.debug("probe_autodiscover: CNAME lookup failed for {}: {}", domain, e)
 
     # SRV probe
-    try:
-        answer = await resolver.resolve(f"_autodiscover._tcp.{domain}", "SRV")
+    answer = await resolve_robust(f"_autodiscover._tcp.{domain}", "SRV")
+    if answer is not None:
         for rdata in answer:
             target = str(rdata.target).rstrip(".").lower()
             for sig in SIGNATURES:
@@ -208,10 +176,6 @@ async def probe_autodiscover(
                             raw=target,
                         )
                     )
-    except dns.exception.DNSException:
-        pass
-    except Exception as e:
-        logger.debug("probe_autodiscover: SRV lookup failed for {}: {}", domain, e)
 
     return results
 
@@ -219,16 +183,14 @@ async def probe_autodiscover(
 async def probe_cname_chain(
     domain: str,
     mx_hosts: list[str],
-    resolver: dns.asyncresolver.Resolver,
 ) -> list[Evidence]:
     """Follow CNAME chains from MX hosts, match final target."""
     results: list[Evidence] = []
     for host in mx_hosts:
         current = host
         for _ in range(10):  # max 10 hops
-            try:
-                answer = await resolver.resolve(current, "CNAME")
-            except (dns.exception.DNSException, Exception):
+            answer = await resolve_robust(current, "CNAME")
+            if answer is None:
                 break
             current = str(answer[0].target).rstrip(".").lower()
 
@@ -364,34 +326,24 @@ async def probe_tenant(domain: str) -> list[Evidence]:
     return results
 
 
-async def probe_asn(
-    mx_hosts: list[str], resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_asn(mx_hosts: list[str]) -> list[Evidence]:
     """Resolve MX IPs, query Team Cymru for ASN, match against providers + Swiss ISPs."""
     results: list[Evidence] = []
 
     for host in mx_hosts:
         # Resolve MX host to IP
-        try:
-            answer = await resolver.resolve(host, "A")
-        except dns.exception.DNSException:
-            continue
-        except Exception as e:
-            logger.debug("probe_asn: A lookup failed for {}: {}", host, e)
+        answer = await resolve_robust(host, "A")
+        if answer is None:
             continue
 
         for rdata in answer:
             ip = str(rdata)
             # Query Team Cymru ASN
             reversed_ip = ".".join(reversed(ip.split(".")))
-            try:
-                asn_answer = await resolver.resolve(
-                    f"{reversed_ip}.origin.asn.cymru.com", "TXT"
-                )
-            except dns.exception.DNSException:
-                continue
-            except Exception as e:
-                logger.debug("probe_asn: Cymru lookup failed for {}: {}", ip, e)
+            asn_answer = await resolve_robust(
+                f"{reversed_ip}.origin.asn.cymru.com", "TXT"
+            )
+            if asn_answer is None:
                 continue
 
             for asn_rdata in asn_answer:
@@ -433,15 +385,13 @@ async def probe_asn(
     return results
 
 
-async def probe_txt_verification(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_txt_verification(domain: str) -> list[Evidence]:
     """Check TXT records for provider domain verification strings."""
     results: list[Evidence] = []
 
     # Query domain TXT records
-    try:
-        answer = await resolver.resolve(domain, "TXT")
+    answer = await resolve_robust(domain, "TXT")
+    if answer is not None:
         for rdata in answer:
             txt = b"".join(rdata.strings).decode("utf-8", errors="ignore")
             for sig in SIGNATURES:
@@ -455,14 +405,10 @@ async def probe_txt_verification(
                             raw=txt,
                         )
                     )
-    except dns.exception.DNSException:
-        pass
-    except Exception as e:
-        logger.debug("probe_txt_verification: TXT lookup failed for {}: {}", domain, e)
 
     # Query _amazonses.{domain} TXT for AWS SES domain verification
-    try:
-        answer = await resolver.resolve(f"_amazonses.{domain}", "TXT")
+    answer = await resolve_robust(f"_amazonses.{domain}", "TXT")
+    if answer is not None:
         for rdata in answer:
             txt = b"".join(rdata.strings).decode("utf-8", errors="ignore")
             if txt:
@@ -475,27 +421,15 @@ async def probe_txt_verification(
                         raw=txt,
                     )
                 )
-    except dns.exception.DNSException:
-        pass
-    except Exception as e:
-        logger.debug(
-            "probe_txt_verification: _amazonses lookup failed for {}: {}", domain, e
-        )
 
     return results
 
 
-async def probe_spf_ip(
-    domain: str, resolver: dns.asyncresolver.Resolver
-) -> list[Evidence]:
+async def probe_spf_ip(domain: str) -> list[Evidence]:
     """Parse SPF ip4: and a: entries, resolve IPs to ASN, match against providers + Swiss ISPs."""
     results: list[Evidence] = []
-    try:
-        answer = await resolver.resolve(domain, "TXT")
-    except dns.exception.DNSException:
-        return results
-    except Exception as e:
-        logger.debug("probe_spf_ip: TXT lookup failed for {}: {}", domain, e)
+    answer = await resolve_robust(domain, "TXT")
+    if answer is None:
         return results
 
     ips: list[str] = []
@@ -511,29 +445,17 @@ async def probe_spf_ip(
                 ips.append(ip)
             elif lower_token.startswith("a:"):
                 hostname = token.split(":", 1)[1]
-                try:
-                    a_answer = await resolver.resolve(hostname, "A")
-                    for a_rdata in a_answer:
-                        ips.append(str(a_rdata))
-                except dns.exception.DNSException:
+                a_answer = await resolve_robust(hostname, "A")
+                if a_answer is None:
                     continue
-                except Exception as e:
-                    logger.debug(
-                        "probe_spf_ip: A lookup failed for {}: {}", hostname, e
-                    )
-                    continue
+                for a_rdata in a_answer:
+                    ips.append(str(a_rdata))
 
     seen_asns: set[int] = set()
     for ip in ips:
         reversed_ip = ".".join(reversed(ip.split(".")))
-        try:
-            asn_answer = await resolver.resolve(
-                f"{reversed_ip}.origin.asn.cymru.com", "TXT"
-            )
-        except dns.exception.DNSException:
-            continue
-        except Exception as e:
-            logger.debug("probe_spf_ip: Cymru lookup failed for {}: {}", ip, e)
+        asn_answer = await resolve_robust(f"{reversed_ip}.origin.asn.cymru.com", "TXT")
+        if asn_answer is None:
             continue
 
         for asn_rdata in asn_answer:

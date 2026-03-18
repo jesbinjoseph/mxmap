@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 
 import dns.asyncresolver
@@ -7,14 +9,12 @@ from loguru import logger
 
 _resolvers = None
 
-_RETRYABLE = (dns.exception.Timeout, dns.resolver.NoAnswer, dns.resolver.NoNameservers)
-
 
 def make_resolvers() -> list[dns.asyncresolver.Resolver]:
     """Create a list of async resolvers pointing to different DNS servers."""
     cache = dns.resolver.Cache()
     resolvers = []
-    for nameservers in [None, ["8.8.8.8", "8.8.4.4"], ["1.1.1.1", "1.0.0.1"]]:
+    for nameservers in [None, ["9.9.9.9", "149.112.112.112"], ["1.1.1.1", "1.0.0.1"]]:
         r = dns.asyncresolver.Resolver()
         if nameservers:
             r.nameservers = nameservers
@@ -32,28 +32,60 @@ def get_resolvers() -> list[dns.asyncresolver.Resolver]:
     return _resolvers
 
 
-async def lookup_mx(domain: str) -> list[str]:
-    """Return list of MX exchange hostnames."""
+async def resolve_robust(qname: str, rdtype: str) -> dns.resolver.Answer | None:
+    """Universal DNS query with multi-resolver fallback and logging.
+
+    Iterates system → Quad9 → Cloudflare resolvers.
+    NXDOMAIN is terminal (returns None immediately).
+    NoAnswer/NoNameservers are expected (debug-level) and retry next resolver.
+    Timeout is a real issue (warning-level) and retries next resolver.
+    """
     resolvers = get_resolvers()
+    had_timeout = False
     for i, resolver in enumerate(resolvers):
         try:
-            answers = await resolver.resolve(domain, "MX")
-            return sorted(str(r.exchange).rstrip(".").lower() for r in answers)
+            return await resolver.resolve(qname, rdtype)
         except dns.resolver.NXDOMAIN:
-            return []
-        except _RETRYABLE as e:
+            return None
+        except dns.exception.Timeout:
+            had_timeout = True
+            logger.warning(
+                "DNS {}/{}: Timeout on resolver {}, retrying",
+                qname,
+                rdtype,
+                i,
+            )
+            await asyncio.sleep(0.5)
+            continue
+        except (dns.resolver.NoAnswer, dns.resolver.NoNameservers) as e:
             logger.debug(
-                "MX {}: {} on resolver {}, retrying", domain, type(e).__name__, i
+                "DNS {}/{}: {} on resolver {}, trying next",
+                qname,
+                rdtype,
+                type(e).__name__,
+                i,
             )
             await asyncio.sleep(0.5)
             continue
         except Exception as e:
-            logger.debug(
-                "MX {}: unexpected error on resolver {}: {}",
-                domain,
+            logger.warning(
+                "DNS {}/{}: unexpected error on resolver {}: {}",
+                qname,
+                rdtype,
                 i,
                 type(e).__name__,
             )
             continue
-    logger.debug("MX {}: all resolvers failed", domain)
-    return []
+    if had_timeout:
+        logger.warning("DNS {}/{}: all resolvers exhausted", qname, rdtype)
+    else:
+        logger.debug("DNS {}/{}: all resolvers exhausted", qname, rdtype)
+    return None
+
+
+async def lookup_mx(domain: str) -> list[str]:
+    """Return list of MX exchange hostnames."""
+    answer = await resolve_robust(domain, "MX")
+    if answer is None:
+        return []
+    return sorted(str(r.exchange).rstrip(".").lower() for r in answer)

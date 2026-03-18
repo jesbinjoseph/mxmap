@@ -12,7 +12,6 @@ from .dns import lookup_mx
 from .models import ClassificationResult, Evidence, Provider, SignalKind
 from .probes import (
     WEIGHTS,
-    _make_resolver,
     detect_gateway,
     lookup_spf_raw,
     probe_asn,
@@ -126,8 +125,6 @@ def _aggregate(
 
 async def classify(domain: str) -> ClassificationResult:
     """Classify a domain's mail infrastructure provider via DNS probes."""
-    resolver = _make_resolver()
-
     # Lookup ALL MX hosts first (robust, multi-resolver), then pattern-match
     all_mx_hosts = await lookup_mx(domain)
     mx_evidence = probe_mx(all_mx_hosts)
@@ -149,18 +146,21 @@ async def classify(domain: str) -> ClassificationResult:
         spf_ip_ev,
         spf_raw,
     ) = await asyncio.gather(
-        probe_spf(domain, resolver),
-        probe_dkim(domain, resolver),
-        probe_dmarc(domain, resolver),
-        probe_autodiscover(domain, resolver),
-        probe_cname_chain(domain, all_mx_hosts, resolver),
+        probe_spf(domain),
+        probe_dkim(domain),
+        probe_dmarc(domain),
+        probe_autodiscover(domain),
+        probe_cname_chain(domain, all_mx_hosts),
         probe_smtp(all_mx_hosts),
         probe_tenant(domain),
-        probe_asn(all_mx_hosts, resolver),
-        probe_txt_verification(domain, resolver),
-        probe_spf_ip(domain, resolver),
-        lookup_spf_raw(domain, resolver),
+        probe_asn(all_mx_hosts),
+        probe_txt_verification(domain),
+        probe_spf_ip(domain),
+        lookup_spf_raw(domain),
     )
+
+    if not spf_raw and not spf_ev:
+        logger.warning("classify({}): no SPF record retrieved", domain)
 
     all_evidence = (
         mx_evidence

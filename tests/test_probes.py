@@ -1,11 +1,8 @@
-"""Tests for DNS probes with mocked resolver."""
+"""Tests for DNS probes with mocked resolve_robust."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import dns.asyncresolver
-import dns.exception
 import dns.name
-import dns.rdatatype
 import httpx
 import pytest
 import stamina
@@ -13,7 +10,6 @@ import stamina
 from mail_sovereignty.models import Provider, SignalKind
 from mail_sovereignty.probes import (
     WEIGHTS,
-    _make_resolver,
     detect_gateway,
     lookup_spf_raw,
     probe_asn,
@@ -28,11 +24,6 @@ from mail_sovereignty.probes import (
     probe_tenant,
     probe_txt_verification,
 )
-
-
-def _mock_resolver():
-    """Create a mock async resolver."""
-    return AsyncMock(spec=dns.asyncresolver.Resolver)
 
 
 def _mx_rdata(exchange: str):
@@ -81,23 +72,32 @@ class TestWeights:
 
 class TestLookupSpfRaw:
     async def test_returns_spf_record(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("v=spf1 include:spf.protection.outlook.com ~all")
-        ]
-        result = await lookup_spf_raw("example.com", resolver)
+        answer = [_txt_rdata("v=spf1 include:spf.protection.outlook.com ~all")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            result = await lookup_spf_raw("example.com")
         assert result == "v=spf1 include:spf.protection.outlook.com ~all"
 
     async def test_no_spf_record(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [_txt_rdata("google-site-verification=abc123")]
-        result = await lookup_spf_raw("example.com", resolver)
+        answer = [_txt_rdata("google-site-verification=abc123")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            result = await lookup_spf_raw("example.com")
         assert result == ""
 
     async def test_dns_error(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException("NXDOMAIN")
-        result = await lookup_spf_raw("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            result = await lookup_spf_raw("example.com")
         assert result == ""
 
 
@@ -135,148 +135,173 @@ class TestProbeMx:
 
 class TestProbeSpf:
     async def test_ms365_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("v=spf1 include:spf.protection.outlook.com ~all")
-        ]
-        results = await probe_spf("example.com", resolver)
+        answer = [_txt_rdata("v=spf1 include:spf.protection.outlook.com ~all")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_spf("example.com")
         assert len(results) == 1
         assert results[0].provider == Provider.MS365
         assert results[0].kind == SignalKind.SPF
 
     async def test_google_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("v=spf1 include:_spf.google.com ~all")
-        ]
-        results = await probe_spf("example.com", resolver)
+        answer = [_txt_rdata("v=spf1 include:_spf.google.com ~all")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_spf("example.com")
         assert len(results) == 1
         assert results[0].provider == Provider.GOOGLE
 
     async def test_infomaniak_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("v=spf1 include:spf.infomaniak.ch ~all")
-        ]
-        results = await probe_spf("example.com", resolver)
+        answer = [_txt_rdata("v=spf1 include:spf.infomaniak.ch ~all")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_spf("example.com")
         assert len(results) == 1
         assert results[0].provider == Provider.INFOMANIAK
 
     async def test_no_spf_record(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [_txt_rdata("google-site-verification=abc123")]
-        results = await probe_spf("example.com", resolver)
+        answer = [_txt_rdata("google-site-verification=abc123")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_spf("example.com")
         assert results == []
 
     async def test_spf_no_matching_include(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("v=spf1 include:custom.example.com ~all")
-        ]
-        results = await probe_spf("example.com", resolver)
+        answer = [_txt_rdata("v=spf1 include:custom.example.com ~all")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_spf("example.com")
         assert results == []
 
     async def test_dns_error(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_spf("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_spf("example.com")
         assert results == []
 
 
 class TestProbeDkim:
     async def test_ms365_selector1_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
+        answer = [
             _cname_rdata("selector1-example-com._domainkey.tenant.onmicrosoft.com.")
         ]
-        results = await probe_dkim("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_dkim("example.com")
         assert any(
             e.provider == Provider.MS365 and e.kind == SignalKind.DKIM for e in results
         )
 
     async def test_google_hit(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if "google._domainkey" in qname:
                 return [_cname_rdata("google._domainkey.domainkey.google.com.")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_dkim("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_dkim("example.com")
         assert any(e.provider == Provider.GOOGLE for e in results)
 
     async def test_no_match(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_dkim("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_dkim("example.com")
         assert results == []
 
 
 class TestProbeDmarc:
     async def test_ms365_hit(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("v=DMARC1; p=reject; rua=mailto:dmarc@rua.agari.com")
-        ]
-        results = await probe_dmarc("example.com", resolver)
+        answer = [_txt_rdata("v=DMARC1; p=reject; rua=mailto:dmarc@rua.agari.com")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_dmarc("example.com")
         assert len(results) == 1
         assert results[0].provider == Provider.MS365
         assert results[0].kind == SignalKind.DMARC
 
     async def test_no_match(self):
-        resolver = _mock_resolver()
-        resolver.resolve.return_value = [
-            _txt_rdata("v=DMARC1; p=none; rua=mailto:dmarc@example.com")
-        ]
-        results = await probe_dmarc("example.com", resolver)
+        answer = [_txt_rdata("v=DMARC1; p=none; rua=mailto:dmarc@example.com")]
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=answer,
+        ):
+            results = await probe_dmarc("example.com")
         assert results == []
 
     async def test_dns_error(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_dmarc("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_dmarc("example.com")
         assert results == []
 
 
 class TestProbeAutodiscover:
     async def test_ms365_cname_hit(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if rdtype == "CNAME" and "autodiscover" in qname:
                 return [_cname_rdata("autodiscover.outlook.com.")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_autodiscover("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_autodiscover("example.com")
         assert len(results) == 1
         assert results[0].provider == Provider.MS365
         assert results[0].kind == SignalKind.AUTODISCOVER
 
     async def test_ms365_srv_hit(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if rdtype == "SRV":
                 return [_srv_rdata("autodiscover.outlook.com.")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_autodiscover("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_autodiscover("example.com")
         assert len(results) == 1
         assert results[0].provider == Provider.MS365
 
     async def test_no_match(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_autodiscover("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_autodiscover("example.com")
         assert results == []
 
 
 class TestProbeCnameChain:
     async def test_follows_chain(self):
-        resolver = _mock_resolver()
         call_count = 0
 
         async def _resolve(qname, rdtype):
@@ -286,25 +311,30 @@ class TestProbeCnameChain:
                 return [_cname_rdata("hop1.example.com.")]
             if call_count == 2:
                 return [_cname_rdata("final.mail.protection.outlook.com.")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_cname_chain(
-            "example.com", ["custom-mx.example.com"], resolver
-        )
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_cname_chain("example.com", ["custom-mx.example.com"])
         assert len(results) == 1
         assert results[0].provider == Provider.MS365
         assert results[0].kind == SignalKind.CNAME_CHAIN
 
     async def test_no_cname(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_cname_chain("example.com", ["mx.example.com"], resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_cname_chain("example.com", ["mx.example.com"])
         assert results == []
 
     async def test_empty_mx_hosts(self):
-        resolver = _mock_resolver()
-        results = await probe_cname_chain("example.com", [], resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_cname_chain("example.com", [])
         assert results == []
 
 
@@ -483,33 +513,29 @@ class TestProbeTenant:
 
 class TestProbeAsn:
     async def test_ms365_asn(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if rdtype == "A":
                 return [_a_rdata("40.97.1.1")]
             if rdtype == "TXT" and "origin.asn.cymru.com" in qname:
                 return [_txt_rdata("8075 | 40.96.0.0/12 | US | arin | 2015-01-01")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_asn(["mx.outlook.com"], resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_asn(["mx.outlook.com"])
         assert any(
             e.provider == Provider.MS365 and e.kind == SignalKind.ASN for e in results
         )
 
     async def test_swiss_isp_asn(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if rdtype == "A":
                 return [_a_rdata("195.186.1.1")]
             if rdtype == "TXT" and "origin.asn.cymru.com" in qname:
                 return [_txt_rdata("3303 | 195.186.0.0/16 | CH | ripencc | 1999-01-01")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_asn(["mx.swisscom.ch"], resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_asn(["mx.swisscom.ch"])
         assert any(
             e.provider == Provider.SWISS_ISP and e.kind == SignalKind.ASN
             for e in results
@@ -517,84 +543,82 @@ class TestProbeAsn:
         assert any("Swisscom" in e.detail for e in results)
 
     async def test_empty_mx_hosts(self):
-        resolver = _mock_resolver()
-        results = await probe_asn([], resolver)
+        results = await probe_asn([])
         assert results == []
 
     async def test_dns_error(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_asn(["mx.example.com"], resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_asn(["mx.example.com"])
         assert results == []
 
 
 class TestProbeTxtVerification:
     async def test_ms365_verification(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
                 return [_txt_rdata("MS=ms12345678")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_txt_verification("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_txt_verification("example.com")
         assert any(
             e.provider == Provider.MS365 and e.kind == SignalKind.TXT_VERIFICATION
             for e in results
         )
 
     async def test_google_verification(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
                 return [_txt_rdata("google-site-verification=abc123")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_txt_verification("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_txt_verification("example.com")
         assert any(
             e.provider == Provider.GOOGLE and e.kind == SignalKind.TXT_VERIFICATION
             for e in results
         )
 
     async def test_aws_ses_verification(self):
-        resolver = _mock_resolver()
-
         async def _resolve(qname, rdtype):
             if qname == "_amazonses.example.com" and rdtype == "TXT":
                 return [_txt_rdata("verification-token-abc")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_txt_verification("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_txt_verification("example.com")
         assert any(
             e.provider == Provider.AWS and e.kind == SignalKind.TXT_VERIFICATION
             for e in results
         )
 
     async def test_no_verification(self):
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_txt_verification("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_txt_verification("example.com")
         assert results == []
 
 
 class TestProbeSpfIp:
     async def test_ip4_swiss_isp(self):
         """SPF ip4: entry resolving to Swiss ISP ASN produces SPF_IP evidence."""
-        resolver = _mock_resolver()
 
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
                 return [_txt_rdata("v=spf1 ip4:195.186.1.1 ~all")]
             if rdtype == "TXT" and "origin.asn.cymru.com" in qname:
                 return [_txt_rdata("3303 | 195.186.0.0/16 | CH | ripencc | 1999-01-01")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_spf_ip("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_spf_ip("example.com")
         assert any(
             e.provider == Provider.SWISS_ISP and e.kind == SignalKind.SPF_IP
             for e in results
@@ -603,17 +627,16 @@ class TestProbeSpfIp:
 
     async def test_ip4_with_cidr(self):
         """ip4: with CIDR notation — uses first IP of the range for ASN lookup."""
-        resolver = _mock_resolver()
 
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
                 return [_txt_rdata("v=spf1 ip4:195.186.1.0/24 ~all")]
             if rdtype == "TXT" and "origin.asn.cymru.com" in qname:
                 return [_txt_rdata("3303 | 195.186.0.0/16 | CH | ripencc | 1999-01-01")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_spf_ip("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_spf_ip("example.com")
         assert any(
             e.provider == Provider.SWISS_ISP and e.kind == SignalKind.SPF_IP
             for e in results
@@ -621,7 +644,6 @@ class TestProbeSpfIp:
 
     async def test_a_entry_resolution(self):
         """SPF a: entry is resolved to IP, then to ASN."""
-        resolver = _mock_resolver()
 
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
@@ -630,10 +652,10 @@ class TestProbeSpfIp:
                 return [_a_rdata("195.186.1.1")]
             if rdtype == "TXT" and "origin.asn.cymru.com" in qname:
                 return [_txt_rdata("3303 | 195.186.0.0/16 | CH | ripencc | 1999-01-01")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_spf_ip("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_spf_ip("example.com")
         assert any(
             e.provider == Provider.SWISS_ISP and e.kind == SignalKind.SPF_IP
             for e in results
@@ -641,17 +663,16 @@ class TestProbeSpfIp:
 
     async def test_provider_asn_match(self):
         """SPF ip4: matching a known provider ASN produces evidence."""
-        resolver = _mock_resolver()
 
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
                 return [_txt_rdata("v=spf1 ip4:40.97.1.1 ~all")]
             if rdtype == "TXT" and "origin.asn.cymru.com" in qname:
                 return [_txt_rdata("8075 | 40.96.0.0/12 | US | arin | 2015-01-01")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_spf_ip("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_spf_ip("example.com")
         assert any(
             e.provider == Provider.MS365 and e.kind == SignalKind.SPF_IP
             for e in results
@@ -659,50 +680,40 @@ class TestProbeSpfIp:
 
     async def test_no_spf_record(self):
         """No SPF record → no results."""
-        resolver = _mock_resolver()
-        resolver.resolve.side_effect = dns.exception.DNSException()
-        results = await probe_spf_ip("example.com", resolver)
+        with patch(
+            "mail_sovereignty.probes.resolve_robust",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            results = await probe_spf_ip("example.com")
         assert results == []
 
     async def test_no_ip4_entries(self):
         """SPF with only include: entries → no results."""
-        resolver = _mock_resolver()
 
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
                 return [_txt_rdata("v=spf1 include:spf.protection.outlook.com ~all")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_spf_ip("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_spf_ip("example.com")
         assert results == []
 
     async def test_deduplicates_asns(self):
         """Multiple IPs on the same ASN produce only one evidence entry per ASN."""
-        resolver = _mock_resolver()
 
         async def _resolve(qname, rdtype):
             if qname == "example.com" and rdtype == "TXT":
                 return [_txt_rdata("v=spf1 ip4:195.186.1.1 ip4:195.186.2.2 ~all")]
             if rdtype == "TXT" and "origin.asn.cymru.com" in qname:
                 return [_txt_rdata("3303 | 195.186.0.0/16 | CH | ripencc | 1999-01-01")]
-            raise dns.exception.DNSException()
+            return None
 
-        resolver.resolve.side_effect = _resolve
-        results = await probe_spf_ip("example.com", resolver)
+        with patch("mail_sovereignty.probes.resolve_robust", side_effect=_resolve):
+            results = await probe_spf_ip("example.com")
         swiss_isp_results = [e for e in results if e.provider == Provider.SWISS_ISP]
         assert len(swiss_isp_results) == 1
-
-
-class TestMakeResolverCache:
-    def test_resolver_has_cache(self):
-        resolver = _make_resolver()
-        assert resolver.cache is not None
-
-    def test_resolvers_share_cache(self):
-        r1 = _make_resolver()
-        r2 = _make_resolver()
-        assert r1.cache is r2.cache
 
 
 class TestProbeTenantRetry:
