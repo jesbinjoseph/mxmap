@@ -38,6 +38,7 @@ from .models import ClassificationResult, Evidence, Provider, SignalKind
 from .probes import (
     WEIGHTS,
     detect_gateway,
+    extract_spf_evidence,
     lookup_spf_raw,
     probe_asn,
     probe_autodiscover,
@@ -46,7 +47,6 @@ from .probes import (
     probe_dmarc,
     probe_mx,
     probe_smtp,
-    probe_spf,
     probe_spf_ip,
     probe_tenant,
     probe_txt_verification,
@@ -233,7 +233,7 @@ async def classify(domain: str) -> ClassificationResult:
 
     # Run remaining probes concurrently, using ALL MX hosts
     (
-        spf_ev,
+        spf_raw,
         dkim_ev,
         dmarc_ev,
         auto_ev,
@@ -243,9 +243,8 @@ async def classify(domain: str) -> ClassificationResult:
         asn_ev,
         txt_ev,
         spf_ip_ev,
-        spf_raw,
     ) = await asyncio.gather(
-        probe_spf(domain),
+        lookup_spf_raw(domain),
         probe_dkim(domain),
         probe_dmarc(domain),
         probe_autodiscover(domain),
@@ -255,10 +254,12 @@ async def classify(domain: str) -> ClassificationResult:
         probe_asn(all_mx_hosts),
         probe_txt_verification(domain),
         probe_spf_ip(domain),
-        lookup_spf_raw(domain),
     )
 
-    if not spf_raw and not spf_ev:
+    # Derive SPF evidence from the raw record (no second DNS query)
+    spf_ev = extract_spf_evidence(spf_raw)
+
+    if not spf_raw:
         logger.warning("classify({}): no SPF record retrieved", domain)
 
     all_evidence = (

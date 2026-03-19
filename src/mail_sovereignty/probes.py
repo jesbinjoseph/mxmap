@@ -63,33 +63,33 @@ def probe_mx(mx_hosts: list[str]) -> list[Evidence]:
     return results
 
 
+def extract_spf_evidence(spf_raw: str) -> list[Evidence]:
+    """Match include: directives in an already-fetched SPF string."""
+    results: list[Evidence] = []
+    if not spf_raw:
+        return results
+    for token in spf_raw.split():
+        if not token.lower().startswith("include:"):
+            continue
+        include_val = token.split(":", 1)[1]
+        for sig in SIGNATURES:
+            if match_patterns(include_val, sig.spf_includes):
+                results.append(
+                    Evidence(
+                        kind=SignalKind.SPF,
+                        provider=sig.provider,
+                        weight=WEIGHTS[SignalKind.SPF],
+                        detail=f"SPF include:{include_val} matches {sig.provider.value}",
+                        raw=spf_raw,
+                    )
+                )
+    return results
+
+
 async def probe_spf(domain: str) -> list[Evidence]:
     """Query TXT for SPF and match include: directives."""
-    results: list[Evidence] = []
-    answer = await resolve_robust(domain, "TXT")
-    if answer is None:
-        return results
-
-    for rdata in answer:
-        txt = b"".join(rdata.strings).decode("utf-8", errors="ignore")
-        if not txt.lower().startswith("v=spf1"):
-            continue
-        for token in txt.split():
-            if not token.lower().startswith("include:"):
-                continue
-            include_val = token.split(":", 1)[1]
-            for sig in SIGNATURES:
-                if match_patterns(include_val, sig.spf_includes):
-                    results.append(
-                        Evidence(
-                            kind=SignalKind.SPF,
-                            provider=sig.provider,
-                            weight=WEIGHTS[SignalKind.SPF],
-                            detail=f"SPF include:{include_val} matches {sig.provider.value}",
-                            raw=txt,
-                        )
-                    )
-    return results
+    spf_raw = await lookup_spf_raw(domain)
+    return extract_spf_evidence(spf_raw)
 
 
 async def probe_dkim(domain: str) -> list[Evidence]:

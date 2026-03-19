@@ -25,7 +25,6 @@ def _patch_all_probes(**overrides):
     """Return a context manager that patches all probes with defaults (empty lists)."""
     probe_names = [
         "probe_mx",
-        "probe_spf",
         "probe_dkim",
         "probe_dmarc",
         "probe_autodiscover",
@@ -39,6 +38,9 @@ def _patch_all_probes(**overrides):
     patches = {}
     for name in probe_names:
         patches[name] = overrides.get(name, [])
+
+    # extract_spf_evidence is a sync function called after lookup_spf_raw
+    spf_evidence = overrides.get("probe_spf", [])
 
     # Also handle detect_gateway and lookup_spf_raw
     gateway = overrides.get("detect_gateway", None)
@@ -67,9 +69,8 @@ def _patch_all_probes(**overrides):
                 new=MagicMock(return_value=patches["probe_mx"]),
             ),
             patch(
-                "mail_sovereignty.classifier.probe_spf",
-                new_callable=AsyncMock,
-                return_value=patches["probe_spf"],
+                "mail_sovereignty.classifier.extract_spf_evidence",
+                return_value=spf_evidence,
             ),
             patch(
                 "mail_sovereignty.classifier.probe_dkim",
@@ -718,8 +719,7 @@ class TestClassify:
                 new=MagicMock(return_value=mx_ev),
             ),
             patch(
-                "mail_sovereignty.classifier.probe_spf",
-                new_callable=AsyncMock,
+                "mail_sovereignty.classifier.extract_spf_evidence",
                 return_value=[],
             ),
             patch(

@@ -548,9 +548,7 @@ class TestScrapeEmailDomains:
         client = AsyncMock()
         client.get = AsyncMock(return_value=FakeResponse())
 
-        result, redirect = await scrape_email_domains(
-            client, "gemeinde-saas-balen.ch"
-        )
+        result, redirect = await scrape_email_domains(client, "gemeinde-saas-balen.ch")
         assert "3908.ch" in result
         assert redirect == "3908.ch"
 
