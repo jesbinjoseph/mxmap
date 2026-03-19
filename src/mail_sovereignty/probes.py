@@ -187,6 +187,11 @@ async def probe_cname_chain(
     """Follow CNAME chains from MX hosts, match final target."""
     results: list[Evidence] = []
     for host in mx_hosts:
+        # Skip hosts that already match a known MX pattern — the provider is
+        # already identified by probe_mx, so CNAME chain adds nothing and the
+        # lookup will just timeout (e.g. Outlook MX hosts).
+        if any(match_patterns(host, sig.mx_patterns) for sig in SIGNATURES):
+            continue
         current = host
         for _ in range(10):  # max 10 hops
             answer = await resolve_robust(current, "CNAME")

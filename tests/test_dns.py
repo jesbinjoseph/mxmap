@@ -224,7 +224,7 @@ class TestResolveRobust:
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 with patch("mail_sovereignty.dns.logger") as mock_logger:
                     await resolve_robust("example.ch", "TXT")
-        mock_logger.warning.assert_called()
+        mock_logger.debug.assert_called()
 
     async def test_warning_logged_on_all_exhausted(self):
         resolvers = []

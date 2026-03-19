@@ -31,6 +31,7 @@
   "2114": {"domain": "villorsonnens.ch", "reason": "Manually verified guess"},
   "2461": {"domain": "schnottwil.ch", "reason": "Using cantonal mail"},
   "2549": {"domain": "bluewin.ch", "reason": "No website, only email"},
+  "2762": {"domain": "allschwil.bl.ch", "reason": "custom contact page"},
   "2789": {"domain": "nenzlingen.ch", "reason": "Manually verified guess"},
   "2822": {"domain": "augst.ch", "reason": "Manually verified guess"},
   "2855": {"domain": "verbund-schafmatt.ch", "reason": "Forwarded to cantonal website"},

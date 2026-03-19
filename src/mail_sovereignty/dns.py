@@ -49,7 +49,7 @@ async def resolve_robust(qname: str, rdtype: str) -> dns.resolver.Answer | None:
             return None
         except dns.exception.Timeout:
             had_timeout = True
-            logger.warning(
+            logger.debug(
                 "DNS {}/{}: Timeout on resolver {}, retrying",
                 qname,
                 rdtype,
