@@ -471,6 +471,33 @@ class TestExtractEmailDomains:
         html = "<html><body>No contact here</body></html>"
         assert extract_email_domains(html) == set()
 
+    def test_mailto_trailing_backslash(self):
+        """BadEscape: backslash in mailto href should be stripped."""
+        html = '<a href="mailto:info@bernex.ch\\">contact</a>'
+        domains = extract_email_domains(html)
+        assert "bernex.ch" in domains
+
+    def test_mailto_trailing_slash(self):
+        """Trailing slash from malformed mailto should be stripped."""
+        html = '<a href="mailto:info@example.org/">contact</a>'
+        domains = extract_email_domains(html)
+        assert "example.org" in domains
+
+    def test_domain_label_too_long(self):
+        """Domains with labels > 63 chars should be filtered out."""
+        long_label = "a" * 64
+        html = f"contact@{long_label}.ch"
+        assert extract_email_domains(html) == set()
+
+    def test_domain_with_slash_filtered(self):
+        """Domains containing a slash (URL fragment) should be filtered out."""
+        html = "user@galeriedelachampagne.ch/subpage"
+        domains = extract_email_domains(html)
+        # The EMAIL_RE may capture "galeriedelachampagne.ch" (valid part),
+        # but any domain with "/" should be filtered
+        for d in domains:
+            assert "/" not in d
+
 
 # ── build_urls() ─────────────────────────────────────────────────────
 

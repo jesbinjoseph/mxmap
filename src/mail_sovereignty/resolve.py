@@ -369,6 +369,15 @@ def decrypt_typo3(encoded: str, offset: int = 2) -> str:
     return "".join(result)
 
 
+def _is_valid_domain(domain: str) -> bool:
+    """Quick syntactic check — reject domains that will fail DNS lookup."""
+    if not domain or len(domain) > 253:
+        return False
+    if "\\" in domain or "/" in domain:
+        return False
+    return all(0 < len(label) <= 63 for label in domain.split("."))
+
+
 def extract_email_domains(html: str) -> set[str]:
     """Extract email domains from HTML, including TYPO3-obfuscated emails."""
     domains = set()
@@ -380,7 +389,7 @@ def extract_email_domains(html: str) -> set[str]:
 
     for email in re.findall(r'mailto:([^">\s?]+)', html):
         if "@" in email:
-            domain = email.split("@")[1].lower()
+            domain = email.split("@")[1].lower().rstrip("\\/.")
             if domain not in SKIP_DOMAINS:
                 domains.add(domain)
 
@@ -394,7 +403,7 @@ def extract_email_domains(html: str) -> set[str]:
                     domains.add(domain)
                 break
 
-    return domains
+    return {d for d in domains if _is_valid_domain(d)}
 
 
 def build_urls(domain: str) -> list[str]:
