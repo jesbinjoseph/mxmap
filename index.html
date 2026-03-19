@@ -196,12 +196,61 @@ function classifyHost(host) {
     return { name: 'CodeTwo', category: 'foreign' };
   if (h.includes('freshservice'))
     return { name: 'Freshservice', category: 'foreign' };
+  // Email security gateways
+  if (['ppe-hosted','pphosted'].some(k => h.includes(k)))
+    return { name: 'Proofpoint', category: 'foreign' };
+  if (h.includes('vadesecure'))
+    return { name: 'Vade Secure', category: 'foreign' };
+  if (h.includes('fortimailcloud'))
+    return { name: 'Fortinet FortiMail', category: 'foreign' };
+  if (h.includes('spamtitan'))
+    return { name: 'SpamTitan', category: 'foreign' };
+  if (['spamexperts','antispamcloud'].some(k => h.includes(k)))
+    return { name: 'SpamExperts', category: 'foreign' };
+  if (h.includes('iphmx'))
+    return { name: 'Cisco IronPort', category: 'foreign' };
+  if (h.includes('mailcontrol'))
+    return { name: 'MailControl', category: 'foreign' };
+  if (h.includes('mimecast'))
+    return { name: 'Mimecast', category: 'foreign' };
+  if (h.includes('messagelabs'))
+    return { name: 'MessageLabs', category: 'foreign' };
+  // Email routing / hosting
+  if (h.includes('mtaroutes'))
+    return { name: 'MTARoutes', category: 'foreign' };
+  if (h.includes('jimdo'))
+    return { name: 'Jimdo', category: 'foreign' };
+  if (h.includes('arsmtp'))
+    return { name: 'Aruba', category: 'foreign' };
+  if (h.includes('stackmail'))
+    return { name: 'StackMail', category: 'foreign' };
+  // SPF-only services
+  if (h.includes('umantis'))
+    return { name: 'Haufe', category: 'foreign' };
+  if (['emailsignatures365','signature365'].some(k => h.includes(k)))
+    return { name: 'Email Signatures 365', category: 'foreign' };
+  if (h.includes('crsend'))
+    return { name: 'CleverReach', category: 'foreign' };
+  if (h.includes('mailersend'))
+    return { name: 'MailerSend', category: 'foreign' };
+  if (h.includes('emailsrvr'))
+    return { name: 'Rackspace', category: 'foreign' };
+  if (h.includes('edgepilot'))
+    return { name: 'EdgePilot', category: 'foreign' };
+  if (h.includes('appriver'))
+    return { name: 'AppRiver', category: 'foreign' };
+  if (h.includes('scnem'))
+    return { name: 'Evalanche', category: 'foreign' };
+  if (h.includes('rubicon.eu'))
+    return { name: 'Rubicon', category: 'foreign' };
   // Known Swiss providers with non-.ch TLDs
   const SWISS_DOMAINS = [
     'abxsec.com','swiss-egov.cloud','sui-inter.net','ch-dns.net','cyon.net',
     'seppmail.cloud','swisscom.com','privasphere.com','tinext.com','cloudrexx.com',
     'mailomat.cloud','comp-sys.net','engadin.cloud','ti-informatique.com',
-    'assolo.net','moresi.com'
+    'assolo.net','moresi.com',
+    'naveum.services','spamvor.com','swisscenter.com','seabix.cloud',
+    'swizzonic.email','tinext.net','hosttech.eu','mailpro.com','tizoo.com'
   ];
   if (SWISS_DOMAINS.some(d => h.endsWith(d) || h.endsWith('.' + d)))
     return { name: h.replace(/^_/, '').split('.').slice(-2).join('.'), category: 'swiss' };
