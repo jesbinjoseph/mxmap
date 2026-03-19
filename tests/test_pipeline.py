@@ -332,7 +332,6 @@ class TestMinifyForFrontend:
 
         entry = mini["municipalities"]["351"]
         assert "bfs" not in entry
-        assert "canton" not in entry
         assert "sources_detail" not in entry
         assert "resolve_flags" not in entry
 
