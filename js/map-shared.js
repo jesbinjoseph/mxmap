@@ -95,7 +95,7 @@ function addLakes(map, topo, lakeColor) {
 
 async function fetchMapData() {
   var responses = await Promise.all([
-    fetch('https://cdn.jsdelivr.net/npm/swiss-maps@4.7.0/2026/ch-combined.json'),
+    fetch('https://unpkg.com/swiss-maps@4.7.0/2026/ch-combined.json'),
     fetch('data.min.json')
   ]);
   return {
