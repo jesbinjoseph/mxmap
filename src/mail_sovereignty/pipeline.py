@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 from pathlib import Path
 from typing import Any
@@ -51,7 +52,7 @@ def _minify_for_frontend(full_output: dict[str, Any]) -> dict[str, Any]:
             for s in entry.get("classification_signals", [])
         ]
         municipalities[bfs] = mini
-    return {"generated": full_output["generated"], "municipalities": municipalities}
+    return {"generated": full_output["generated"], "commit": full_output.get("commit"), "municipalities": municipalities}
 
 
 def _output_provider(provider: Provider) -> str:
@@ -196,8 +197,18 @@ async def run(domains_path: Path, output_path: Path) -> None:
     sorted_counts = dict(sorted(counts.items()))
     sorted_munis = dict(sorted(results.items(), key=lambda kv: int(kv[0])))
 
+    commit = (
+        subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        or None
+    )
+
     output = {
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "commit": commit,
         "total": len(results),
         "counts": sorted_counts,
         "municipalities": sorted_munis,

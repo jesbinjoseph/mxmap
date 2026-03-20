@@ -77,8 +77,11 @@ function toggleLegend() {
 function showGenerated(dnsData) {
   if (dnsData.generated) {
     var date = new Date(dnsData.generated);
-    document.getElementById('generated').textContent =
-      'Updated ' + date.toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
+    var text = 'Updated ' + date.toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
+    if (dnsData.commit) {
+      text += ' \u00b7 ' + dnsData.commit;
+    }
+    document.getElementById('generated').textContent = text;
   }
 }
 
