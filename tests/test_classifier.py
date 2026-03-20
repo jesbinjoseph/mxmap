@@ -177,6 +177,25 @@ class TestAggregate:
         # MX+SPF rule → 0.90 (DMARC is Google's, not MS365's)
         assert result.confidence == pytest.approx(0.90)
 
+    def test_gateway_dkim_beats_spf_from_dns_host(self):
+        """Behind a gateway, DKIM provider wins over SPF-only provider."""
+        evidence = [
+            _ev(SignalKind.SPF, Provider.INFOMANIAK),
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result = _aggregate(evidence, gateway="proofpoint")
+        assert result.provider == Provider.MS365
+
+    def test_no_dkim_boost_without_gateway(self):
+        """Without gateway, SPF still beats DKIM (normal precedence)."""
+        evidence = [
+            _ev(SignalKind.SPF, Provider.INFOMANIAK),
+            _ev(SignalKind.DKIM, Provider.MS365),
+        ]
+        result = _aggregate(evidence)
+        assert result.provider == Provider.INFOMANIAK
+
     def test_confidence_capped_at_1(self):
         evidence = [_ev(kind, Provider.MS365) for kind in SignalKind]
         result = _aggregate(evidence)

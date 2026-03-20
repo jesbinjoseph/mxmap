@@ -23,6 +23,11 @@ Signal hierarchy:
       confirmation signal when the winning provider is MS365.
     - **Gateway** (detected from MX hostnames) is not a ``SignalKind``; it
       participates in rule matching but never contributes to boost.
+    - **Gateway DKIM boost**: when a security gateway is detected and multiple
+      providers compete, DKIM providers receive a small score boost (0.06).
+      Behind a gateway, DKIM is a stronger signal than SPF because it proves
+      the actual email-signing provider, while SPF can be auto-inherited from
+      DNS hosting infrastructure.
 """
 
 from __future__ import annotations
@@ -59,6 +64,10 @@ _PRIMARY_KINDS = frozenset(
 
 # Boost per additional signal beyond the matched rule
 _BOOST_PER_SIGNAL = 0.02
+
+# Behind a gateway, boost DKIM provider scores so DKIM (0.15 + 0.06 = 0.21)
+# beats SPF-only (0.20) from a DNS-hosting provider.
+_GATEWAY_DKIM_BOOST = 0.06
 
 
 def _rule_confidence(
@@ -194,6 +203,14 @@ def _aggregate(
         score = sum(WEIGHTS[k] for k in kinds if k in _PRIMARY_KINDS)
         if score > 0:
             primary_scores[provider] = score
+
+    # Behind a gateway, DKIM is a stronger signal than SPF because DKIM
+    # proves the actual email-signing provider, while SPF can be auto-
+    # inherited from DNS hosting infrastructure.
+    if gateway and len(primary_scores) > 1:
+        for provider, kinds in by_provider.items():
+            if SignalKind.DKIM in kinds and provider in primary_scores:
+                primary_scores[provider] += _GATEWAY_DKIM_BOOST
 
     if primary_scores:
         winner = max(primary_scores, key=primary_scores.get)
