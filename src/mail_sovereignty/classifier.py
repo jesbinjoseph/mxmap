@@ -105,7 +105,7 @@ AD Cases sind natürlich nur MS-relevant. Mit den restlichen Indikatoren könnte
     R4    MX ∧ TENANT                0.85
     R5    SPF ∧ TENANT               0.80
     R6    SPF ∧ GW                   0.70
-    R7    MX                         0.60  // eher auf 80%
+    R7    MX                         0.80
     R8    SPF                        0.50
     R9    else                       0.40
     ====  ==========================  ====
@@ -134,7 +134,7 @@ AD Cases sind natürlich nur MS-relevant. Mit den restlichen Indikatoren könnte
     elif has_spf and has_gateway:
         base, used = 0.70, {SignalKind.SPF}
     elif has_mx:
-        base, used = 0.60, {SignalKind.MX}
+        base, used = 0.80, {SignalKind.MX}
     elif has_spf:
         base, used = 0.50, {SignalKind.SPF}
     else:

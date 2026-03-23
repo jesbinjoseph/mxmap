@@ -141,8 +141,8 @@ class TestAggregate:
         evidence = [_ev(SignalKind.MX, Provider.MS365)]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        # MX-only rule → 0.60
-        assert result.confidence == pytest.approx(0.60)
+        # MX-only rule → 0.80
+        assert result.confidence == pytest.approx(0.80)
 
     def test_multi_signal_same_provider(self):
         evidence = [
@@ -162,8 +162,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        # MX-only rule → 0.60 (duplicate MX doesn't change anything)
-        assert result.confidence == pytest.approx(0.60)
+        # MX-only rule → 0.80 (duplicate MX doesn't change anything)
+        assert result.confidence == pytest.approx(0.80)
 
     def test_conflict_more_primary_signals_wins(self):
         evidence = [
@@ -271,8 +271,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.GOOGLE
-        # MX-only rule → 0.60 (TENANT is MS365's, not Google's)
-        assert result.confidence == pytest.approx(0.60)
+        # MX-only rule → 0.80 (TENANT is MS365's, not Google's)
+        assert result.confidence == pytest.approx(0.80)
 
     def test_txt_verification_alone_no_winner(self):
         """TXT_VERIFICATION alone cannot pick a winner (not primary)."""
@@ -292,8 +292,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        # MX-only rule (0.60) + TXT_VERIFICATION boost (0.02) = 0.62
-        assert result.confidence == pytest.approx(0.62)
+        # MX-only rule (0.80) + TXT_VERIFICATION boost (0.02) = 0.82
+        assert result.confidence == pytest.approx(0.82)
 
     def test_asn_alone_no_winner(self):
         """ASN alone cannot pick a winner (not primary)."""
@@ -313,8 +313,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        # MX-only rule (0.60) + ASN boost (0.02) = 0.62
-        assert result.confidence == pytest.approx(0.62)
+        # MX-only rule (0.80) + ASN boost (0.02) = 0.82
+        assert result.confidence == pytest.approx(0.82)
 
     def test_infomaniak_classification(self):
         evidence = [
@@ -352,8 +352,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.GOOGLE
-        # MX-only rule (0.60) + SPF_IP boost (0.02) = 0.62
-        assert result.confidence == pytest.approx(0.62)
+        # MX-only rule (0.80) + SPF_IP boost (0.02) = 0.82
+        assert result.confidence == pytest.approx(0.82)
 
     def test_autodiscover_is_primary_signal(self):
         """Autodiscover alone establishes a provider (not INDEPENDENT)."""
