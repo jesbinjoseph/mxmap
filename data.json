@@ -1,6 +1,6 @@
 {
-  "generated":"2026-03-23T20:27:07Z",
-  "commit":"a937f8d",
+  "generated":"2026-03-23T21:23:16Z",
+  "commit":"bdd66cf",
   "total":2110,
   "counts":{
     "aws":22,
@@ -4626,15 +4626,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"spf_ip",
@@ -7218,7 +7218,7 @@
       "spf":"v=spf1 mx include:_netblocks_v4.pfaeffikon.ch include:_partners.pfaeffikon.ch include:_spf.abxsec.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":95.0,
+      "classification_confidence":98.0,
       "classification_signals":[
         {
           "kind":"mx",
@@ -7550,15 +7550,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "gateway":"trendmicro",
@@ -9408,7 +9408,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ip4:193.135.56.6 ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -13168,15 +13168,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"spf_ip",
@@ -13307,7 +13307,7 @@
       "spf":"v=spf1 mx mx:hin.ch ip4:194.209.116.36 include:_spf.i-web.ch include:spf.umantis.com include:_spf.psm.knowbe4.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"dkim",
@@ -13464,7 +13464,7 @@
       "spf":"v=spf1 mx ip4:194.209.196.58 ip4:194.209.196.59 include:spf.umantis.com include:spf1.ne.ch include:spf.protection.outlook.com a:mail.quorumsoftware.ch ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":82.0,
+      "classification_confidence":90.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -18805,7 +18805,7 @@
       "spf":"v=spf1 redirect=frutigen.ch.spf.hornetdmarc.com",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -18918,7 +18918,7 @@
       "spf":"v=spf1 include:_spf.pcetera.ch include:spf.mandrillapp.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -21098,7 +21098,7 @@
       "spf":"v=spf1 mx include:spf.zic-network.ch include:_spf.pcetera.ch -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -23636,15 +23636,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -24012,15 +24012,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -26090,15 +26090,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"spf_ip",
@@ -26263,7 +26263,7 @@
       "spf":"v=spf1 include:_spf.pcetera.ch include:_spf.i-web.ch -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -26311,7 +26311,7 @@
       "spf":"v=spf1 ip4:82.220.26.128/26 ip4:194.56.218.181 mx include:thunersee.ch include:_spf.talus.ch include:spf.protection.outlook.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":82.0,
+      "classification_confidence":90.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -28266,15 +28266,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -29543,7 +29543,7 @@
       "spf":"v=spf1 ip4:82.220.26.128/26 mx include:spf.protection.cyon.net include:spf.protection.outlook.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":84.0,
+      "classification_confidence":92.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -29970,7 +29970,7 @@
       "spf":"v=spf1 ip4:82.220.26.128/26 include:spf.internetgalerie.ch mx include:spf.cloudrexx.com include:_spf.i-web.ch include:_spf.sui-inter.net include:spf.protection.outlook.com a:c.spf.service-now.com a:mail.codx.ch include:spf.mandrillapp.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":82.0,
+      "classification_confidence":90.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -30117,7 +30117,7 @@
       "spf":"v=spf1 ip4:80.74.155.167 include:_spf.pcetera.ch -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -30704,15 +30704,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -33205,15 +33205,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"txt_verification",
@@ -34755,12 +34755,6 @@
           "provider":"microsoft",
           "weight":0.1,
           "detail":"MS365 tenant detected: Managed"
-        },
-        {
-          "kind":"asn",
-          "provider":"google",
-          "weight":0.03,
-          "detail":"ASN 15169 matches google"
         },
         {
           "kind":"asn",
@@ -36591,15 +36585,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -37456,15 +37450,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -37726,15 +37720,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -38575,15 +38569,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -39619,15 +39613,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -40394,7 +40388,7 @@
         "ktvmx03.mail.admin.ch",
         "ktvmx04.mail.admin.ch"
       ],
-      "spf":"v=spf1 ip4:185.7.213.20 include:_spfgroupa.admin.ch include:_spf.i-web.ch include:spf.protection.outlook.com -all",
+      "spf":"v=spf1 include:_spfgroupa.admin.ch include:_spf.i-web.ch include:spf.protection.outlook.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
       "classification_confidence":82.0,
@@ -40462,15 +40456,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -40695,15 +40689,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -42251,15 +42245,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -44384,15 +44378,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -45884,15 +45878,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -46176,15 +46170,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -46465,7 +46459,7 @@
       "spf":"v=spf1 include:_spf.fortimailcloud.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -47196,15 +47190,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"spf_ip",
@@ -51311,15 +51305,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -54537,10 +54531,10 @@
         "mx1.rufcloud.ch",
         "mx2.rufcloud.ch"
       ],
-      "spf":"v=spf1 mx a:mail.asp.ruf.ch a:mx1.rufcloud.ch a:mx2.rufcloud.ch a:webcms.ruf.ch include:spf.cloudrexx.com  -all",
+      "spf":"v=SPF1 mx include:spf.customer.swiss-egov.cloud a:webcms.ruf.ch include:spf.cloudrexx.com -all",
       "provider":"independent",
       "category":"swiss-based",
-      "classification_confidence":96.0,
+      "classification_confidence":94.0,
       "classification_signals":[
         {
           "kind":"tenant",
@@ -54559,12 +54553,6 @@
           "provider":"swiss-isp",
           "weight":0.03,
           "detail":"ASN 6730 is Swiss ISP: Sunrise UPC"
-        },
-        {
-          "kind":"spf_ip",
-          "provider":"swiss-isp",
-          "weight":0.08,
-          "detail":"SPF ip4/a ASN 6730 is Swiss ISP: Sunrise UPC"
         }
       ],
       "sources_detail":{
@@ -55488,15 +55476,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -57139,7 +57127,7 @@
       "spf":"v=spf1 mx a include:_spf.ch.seppmail.cloud include:spf.nl2go.com include:_spf.i-web.ch include:_spf.zimpel.de include:spf.umantis.com ip4:194.48.244.4 ip4:185.73.240.214 -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -58040,12 +58028,6 @@
         },
         {
           "kind":"spf_ip",
-          "provider":"microsoft",
-          "weight":0.08,
-          "detail":"SPF ip4/a ASN 8075 matches ms365"
-        },
-        {
-          "kind":"spf_ip",
           "provider":"aws",
           "weight":0.08,
           "detail":"SPF ip4/a ASN 16509 matches aws"
@@ -58054,7 +58036,7 @@
           "kind":"spf_ip",
           "provider":"swiss-isp",
           "weight":0.08,
-          "detail":"SPF ip4/a ASN 29691 is Swiss ISP: Hostpoint / Green.ch"
+          "detail":"SPF ip4/a ASN 6730 is Swiss ISP: Sunrise UPC"
         },
         {
           "kind":"spf_ip",
@@ -58064,9 +58046,15 @@
         },
         {
           "kind":"spf_ip",
+          "provider":"microsoft",
+          "weight":0.08,
+          "detail":"SPF ip4/a ASN 8075 matches ms365"
+        },
+        {
+          "kind":"spf_ip",
           "provider":"swiss-isp",
           "weight":0.08,
-          "detail":"SPF ip4/a ASN 6730 is Swiss ISP: Sunrise UPC"
+          "detail":"SPF ip4/a ASN 29691 is Swiss ISP: Hostpoint / Green.ch"
         }
       ],
       "sources_detail":{
@@ -58196,15 +58184,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -60045,15 +60033,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -64454,15 +64442,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"txt_verification",
@@ -64991,15 +64979,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -67030,7 +67018,7 @@
       "spf":"v=spf1 include:_netblocks1.admin.ch include:_netblocks2.admin.ch include:_netblocks3.admin.ch include:_netblocks4.admin.ch ip4:194.147.134.3 -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -67168,7 +67156,7 @@
       "spf":"v=spf1 include:_netblocks1.admin.ch include:_netblocks2.admin.ch include:_netblocks3.admin.ch include:_netblocks4.admin.ch ip4:194.147.134.3 -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -67226,7 +67214,7 @@
       "spf":"v=spf1 include:_netblocks1.admin.ch include:_netblocks2.admin.ch include:_netblocks3.admin.ch include:_netblocks4.admin.ch ip4:159.100.252.16 ip4:194.147.134.3 -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -67393,15 +67381,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "gateway":"seppmail",
@@ -68279,7 +68267,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -68558,7 +68546,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -68694,7 +68682,7 @@
       "spf":"v=spf1 a mx include:_spf.abxsec.com include:spf.postal.e9li.io include:spf.protection.outlook.com ip4:146.185.0.80/29 -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":94.0,
+      "classification_confidence":92.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -69236,7 +69224,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -69392,7 +69380,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com include:_spf.i-web.ch ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -69495,7 +69483,7 @@
       "spf":"v=spf1 mx include:spf.sendinblue.com include:spf.mailjet.com include:_spf.abxsec.com include:_spf.bexio.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -69541,7 +69529,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -69592,7 +69580,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -69745,7 +69733,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com include:_spf.i-web.ch ip4:193.135.56.6 -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -70270,7 +70258,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ip4:193.135.56.6 ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -70484,7 +70472,7 @@
       "spf":"v=spf1 a mx include:_spf.abxsec.com include:_spf.sui-inter.net ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -70532,7 +70520,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -70918,7 +70906,7 @@
       "spf":"v=spf1 mx include:_spf.abxsec.com ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -71217,7 +71205,7 @@
       "spf":"v=spf1 mx ip4:217.26.49.138 ip4:217.26.49.139 include:_spf.abxsec.com include:speedadmin.dk include:spf.nl2go.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -73297,15 +73285,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -73890,7 +73878,7 @@
       "spf":"v=spf1 include:_spf.prod.hydra.sophos.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -74478,7 +74466,7 @@
       "spf":"v=spf1 include:_spf.mailersend.net include:spf.engadin.cloud ip4:78.46.166.37 ip6:2a01:4f8:d0a:61c2::2 include:spf.spotwerbung.ch include:spfhard.crsend.com include:spf.mailjet.com include:eu.zcsend.net -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":93.0,
+      "classification_confidence":96.0,
       "classification_signals":[
         {
           "kind":"mx",
@@ -82984,15 +82972,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"txt_verification",
@@ -83266,7 +83254,7 @@
       "spf":"v=spf1 mx include:_spf.ch.seppmail.cloud include:spf.protection.outlook.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":92.0,
+      "classification_confidence":90.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -84374,7 +84362,7 @@
       "spf":"v=spf1 include:_spf.ch.seppmail.cloud ip4:193.135.56.6 -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":48.0,
+      "classification_confidence":92.0,
       "classification_signals":[
         {
           "kind":"dkim",
@@ -85830,7 +85818,7 @@
       "spf":"v=spf1 mx ip4:193.47.120.62 ip4:193.47.120.63 ip4:193.47.104.5 ip4:193.135.56.6 ip4:81.62.141.146 include:_spf.ch.seppmail.cloud ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":46.0,
+      "classification_confidence":77.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -91099,15 +91087,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"aws",
           "weight":0.07,
           "detail":"TXT verification matches aws"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"spf_ip",
@@ -99707,15 +99695,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -101996,15 +101984,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -102647,15 +102635,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -104037,15 +104025,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"spf_ip",
@@ -104647,15 +104635,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"spf_ip",
@@ -104708,15 +104696,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"spf_ip",
@@ -104970,7 +104958,7 @@
       "spf":"v=spf1 a:smtp.mlt-systems.ch a:cpanel.mlt-systems.ch include:spf.protection.outlook.com -all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":84.0,
+      "classification_confidence":92.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -108170,15 +108158,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"spf_ip",
@@ -111335,15 +111323,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"spf_ip",
@@ -113544,15 +113532,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -115694,12 +115682,6 @@
           "detail":"ASN 15169 matches google"
         },
         {
-          "kind":"asn",
-          "provider":"google",
-          "weight":0.03,
-          "detail":"ASN 15169 matches google"
-        },
-        {
           "kind":"txt_verification",
           "provider":"aws",
           "weight":0.07,
@@ -117759,12 +117741,6 @@
           "provider":"microsoft",
           "weight":0.1,
           "detail":"MS365 tenant detected: Managed"
-        },
-        {
-          "kind":"asn",
-          "provider":"google",
-          "weight":0.03,
-          "detail":"ASN 15169 matches google"
         },
         {
           "kind":"asn",
@@ -120182,15 +120158,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"aws",
-          "weight":0.07,
-          "detail":"TXT verification matches aws"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"aws",
+          "weight":0.07,
+          "detail":"TXT verification matches aws"
         },
         {
           "kind":"txt_verification",
@@ -122066,15 +122042,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"txt_verification",
@@ -127497,15 +127473,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -130406,7 +130382,7 @@
       "spf":"v=spf1 redirect=salgesch.ch.spf.hornetdmarc.com",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":75.0,
       "classification_signals":[
         {
           "kind":"autodiscover",
@@ -131271,15 +131247,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -131571,15 +131547,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -132075,15 +132051,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"txt_verification",
@@ -132173,15 +132149,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -133841,15 +133817,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{
@@ -134220,15 +134196,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "gateway":"proofpoint",
@@ -134515,7 +134491,7 @@
       "spf":"v=spf1 include:clients.ciges.ch include:spf1.ne.ch include:spf.infomaniak.ch ~all",
       "provider":"microsoft",
       "category":"us-cloud",
-      "classification_confidence":44.0,
+      "classification_confidence":85.0,
       "classification_signals":[
         {
           "kind":"spf",
@@ -136455,15 +136431,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"spf_ip",
@@ -138152,15 +138128,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"aws",
           "weight":0.07,
           "detail":"TXT verification matches aws"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         },
         {
           "kind":"txt_verification",
@@ -138219,15 +138195,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"google",
-          "weight":0.07,
-          "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"microsoft",
           "weight":0.07,
           "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"google",
+          "weight":0.07,
+          "detail":"TXT verification matches google"
         }
       ],
       "sources_detail":{
@@ -138542,15 +138518,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"aws",
           "weight":0.07,
           "detail":"TXT verification matches aws"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"txt_verification",
@@ -138893,21 +138869,21 @@
         },
         {
           "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
+        },
+        {
+          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
-        },
-        {
-          "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
         },
         {
           "kind":"txt_verification",
@@ -139594,15 +139570,15 @@
         },
         {
           "kind":"txt_verification",
-          "provider":"microsoft",
-          "weight":0.07,
-          "detail":"TXT verification matches ms365"
-        },
-        {
-          "kind":"txt_verification",
           "provider":"google",
           "weight":0.07,
           "detail":"TXT verification matches google"
+        },
+        {
+          "kind":"txt_verification",
+          "provider":"microsoft",
+          "weight":0.07,
+          "detail":"TXT verification matches ms365"
         }
       ],
       "sources_detail":{

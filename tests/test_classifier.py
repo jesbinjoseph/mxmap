@@ -370,15 +370,15 @@ class TestAggregate:
         assert result.confidence == pytest.approx(0.42)
 
     def test_autodiscover_plus_tenant(self):
-        """Autodiscover as primary + tenant boosts confidence."""
+        """Autodiscover + tenant → dedicated ad_tenant rule."""
         evidence = [
             _ev(SignalKind.AUTODISCOVER, Provider.MS365),
             _ev(SignalKind.TENANT, Provider.MS365),
         ]
         result, _ = _aggregate(evidence)
         assert result.provider == Provider.MS365
-        # Fallback rule (0.40) + AUTODISCOVER boost (0.02) + TENANT boost (0.02) = 0.44
-        assert result.confidence == pytest.approx(0.44)
+        # ad_tenant rule → 0.75
+        assert result.confidence == pytest.approx(0.75)
 
     def test_autodiscover_beats_asn(self):
         """Zernez scenario: autodiscover(microsoft) + ASN(aws) → microsoft."""
@@ -570,6 +570,137 @@ class TestAggregate:
             ]
         )
         assert mx_tenant.confidence >= spf_tenant.confidence
+
+    # --- DKIM rules ---
+
+    def test_dkim_tenant(self):
+        """Ittigen scenario: DKIM + TENANT → dkim_tenant (0.75)."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "dkim_tenant"
+        assert result.confidence == pytest.approx(0.75)
+
+    def test_dkim_tenant_with_extra(self):
+        """DKIM + TENANT + TXT_VERIFICATION → 0.75 + 0.02 = 0.77."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+            _ev(SignalKind.TXT_VERIFICATION, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "dkim_tenant"
+        assert result.confidence == pytest.approx(0.77)
+
+    def test_dkim_tenant_gateway(self):
+        """DKIM + TENANT behind gateway → dkim_tenant_gw (0.85)."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence, gateway="seppmail")
+        assert result.provider == Provider.MS365
+        assert rule == "dkim_tenant_gw"
+        assert result.confidence == pytest.approx(0.85)
+
+    def test_dkim_ad_tenant(self):
+        """Windisch scenario: DKIM + AD + TENANT → dkim_ad_tenant (0.90)."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.AUTODISCOVER, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "dkim_ad_tenant"
+        assert result.confidence == pytest.approx(0.90)
+
+    def test_dkim_ad_tenant_with_extra(self):
+        """DKIM + AD + TENANT + TXT_VERIFICATION → 0.90 + 0.02 = 0.92."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.AUTODISCOVER, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+            _ev(SignalKind.TXT_VERIFICATION, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "dkim_ad_tenant"
+        assert result.confidence == pytest.approx(0.92)
+
+    def test_dkim_spf_tenant(self):
+        """DKIM + SPF + TENANT → dkim_spf_tenant (0.90)."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.SPF, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "dkim_spf_tenant"
+        assert result.confidence == pytest.approx(0.90)
+
+    def test_ad_tenant(self):
+        """Geroldswil scenario: AD + TENANT → ad_tenant (0.75)."""
+        evidence = [
+            _ev(SignalKind.AUTODISCOVER, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "ad_tenant"
+        assert result.confidence == pytest.approx(0.75)
+
+    def test_ad_tenant_with_extra(self):
+        """AD + TENANT + TXT_VERIFICATION → 0.75 + 0.02 = 0.77."""
+        evidence = [
+            _ev(SignalKind.AUTODISCOVER, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+            _ev(SignalKind.TXT_VERIFICATION, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "ad_tenant"
+        assert result.confidence == pytest.approx(0.77)
+
+    def test_dkim_only_falls_to_fallback(self):
+        """DKIM alone without TENANT → fallback (DKIM not strong enough alone)."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.MS365
+        assert rule == "fallback"
+        assert result.confidence == pytest.approx(0.42)
+
+    def test_dkim_tenant_non_ms365_no_tenant_in_present(self):
+        """DKIM(Google) + TENANT(MS365) → TENANT not counted for Google."""
+        evidence = [
+            _ev(SignalKind.DKIM, Provider.GOOGLE),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence)
+        assert result.provider == Provider.GOOGLE
+        # TENANT is MS365-only → not in present for Google → fallback
+        assert rule == "fallback"
+        assert result.confidence == pytest.approx(0.42)
+
+    def test_gateway_dkim_tenant_anniviers_scenario(self):
+        """Anniviers: SPF(Infomaniak) + DKIM(MS365) + TENANT(MS365) behind proofpoint."""
+        evidence = [
+            _ev(SignalKind.SPF, Provider.INFOMANIAK),
+            _ev(SignalKind.DKIM, Provider.MS365),
+            _ev(SignalKind.TENANT, Provider.MS365),
+        ]
+        result, rule = _aggregate(evidence, gateway="proofpoint")
+        # Gateway DKIM boost: MS365 DKIM 0.15 + 0.06 = 0.21 > Infomaniak SPF 0.20
+        assert result.provider == Provider.MS365
+        assert rule == "dkim_tenant_gw"
+        assert result.confidence == pytest.approx(0.85)
 
 
 class TestClassify:

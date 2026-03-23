@@ -69,14 +69,23 @@ _S = SignalKind  # local alias for compact table
 # fmt: off
 _PROVIDER_RULES: tuple[_Rule, ...] = (
     # rule name             signals                                            gw?      base
+    # --- 3 signals (0.90–0.95) ---
     _Rule("mx_spf_tenant",  frozenset({_S.MX, _S.SPF, _S.TENANT}),             False,   0.95),
     _Rule("mx_spf_ad",      frozenset({_S.MX, _S.SPF, _S.AUTODISCOVER}),       False,   0.95),
     _Rule("ad_spf_tenant",  frozenset({_S.AUTODISCOVER, _S.SPF, _S.TENANT}),   False,   0.95),
+    _Rule("dkim_ad_tenant", frozenset({_S.DKIM, _S.AUTODISCOVER, _S.TENANT}),  False,   0.90),
+    _Rule("dkim_spf_tenant",frozenset({_S.DKIM, _S.SPF, _S.TENANT}),           False,   0.90),
+    # --- 2 signals (0.75–0.90) ---
     _Rule("mx_spf",         frozenset({_S.MX, _S.SPF}),                        False,   0.90),
     _Rule("spf_tenant_gw",  frozenset({_S.SPF, _S.TENANT}),                    True,    0.90),
+    _Rule("dkim_tenant_gw", frozenset({_S.DKIM, _S.TENANT}),                   True,    0.85),
     _Rule("mx_tenant",      frozenset({_S.MX, _S.TENANT}),                     False,   0.85),
     _Rule("spf_tenant",     frozenset({_S.SPF, _S.TENANT}),                    False,   0.80),
+    _Rule("dkim_tenant",    frozenset({_S.DKIM, _S.TENANT}),                   False,   0.75),
+    _Rule("ad_tenant",      frozenset({_S.AUTODISCOVER, _S.TENANT}),           False,   0.75),
+    # --- 1 signal + gateway ---
     _Rule("spf_gw",         frozenset({_S.SPF}),                               True,    0.70),
+    # --- 1 signal ---
     _Rule("mx_only",        frozenset({_S.MX}),                                False,   0.80),
     _Rule("spf_only",       frozenset({_S.SPF}),                               False,   0.50),
     _Rule("fallback",       frozenset(),                                       False,   0.40),
@@ -117,6 +126,8 @@ def _rule_confidence(
         present.add(SignalKind.TENANT)
     if SignalKind.AUTODISCOVER in signals:
         present.add(SignalKind.AUTODISCOVER)
+    if SignalKind.DKIM in signals:
+        present.add(SignalKind.DKIM)
     has_gateway = gateway is not None
 
     for rule in _PROVIDER_RULES:
