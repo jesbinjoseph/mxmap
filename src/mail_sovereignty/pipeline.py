@@ -52,7 +52,11 @@ def _minify_for_frontend(full_output: dict[str, Any]) -> dict[str, Any]:
             for s in entry.get("classification_signals", [])
         ]
         municipalities[bfs] = mini
-    return {"generated": full_output["generated"], "commit": full_output.get("commit"), "municipalities": municipalities}
+    return {
+        "generated": full_output["generated"],
+        "commit": full_output.get("commit"),
+        "municipalities": municipalities,
+    }
 
 
 def _output_provider(provider: Provider) -> str:
