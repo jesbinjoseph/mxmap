@@ -84,6 +84,18 @@ def _rule_confidence(
 
     Rule chain (ordered by specificity, first match wins):
 
+  ```
+- MX only 80% (Most likely unfinished config)
+- MX + SPF 90% (Managed setup)
+- AD + SPF 90% (Security GW upfront)
+- MX + SPF + AD 95% (Cloud Setup)
+
+AD Cases sind natürlich nur MS-relevant. Mit den restlichen Indikatoren könntest du bspw. dann die restlichen 5-10% auffüllen.  Die %-te kann man natürlich auch anders aufteilen.
+```
+
+// messen wie viel Rule gebraucht wird, evtl R5-R8 nicht unbeding relevant
+
+
     ====  ==========================  ====
     Rule  Condition                   Base
     ====  ==========================  ====
@@ -93,7 +105,7 @@ def _rule_confidence(
     R4    MX ∧ TENANT                0.85
     R5    SPF ∧ TENANT               0.80
     R6    SPF ∧ GW                   0.70
-    R7    MX                         0.60
+    R7    MX                         0.60  // eher auf 80%
     R8    SPF                        0.50
     R9    else                       0.40
     ====  ==========================  ====
@@ -143,7 +155,7 @@ def _independent_confidence(
 
     * MX + SPF present → 0.90
     * MX only          → 0.60
-    * Any evidence     → 0.50
+    * No MX, secondary evidence only → 0.20
     * Nothing          → 0.0
 
     After the base is selected, each distinct signal kind in *evidence*
@@ -158,7 +170,7 @@ def _independent_confidence(
     elif has_mx:
         base = 0.60
     elif evidence:
-        base = 0.50
+        base = 0.20
     else:
         return 0.0
 

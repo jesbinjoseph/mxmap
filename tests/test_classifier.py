@@ -226,8 +226,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.INDEPENDENT
-        # Evidence present but no MX → 0.50 base + 1 extra kind × 0.02
-        assert result.confidence == pytest.approx(0.52)
+        # No MX, secondary evidence only → 0.20 base + 1 extra kind × 0.02
+        assert result.confidence == pytest.approx(0.22)
 
     def test_tenant_with_primary(self):
         """Tenant evidence with MX primary → MX+TENANT rule."""
@@ -281,8 +281,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.INDEPENDENT
-        # Evidence present but no MX → 0.50 base + 1 extra kind × 0.02
-        assert result.confidence == pytest.approx(0.52)
+        # No MX, secondary evidence only → 0.20 base + 1 extra kind × 0.02
+        assert result.confidence == pytest.approx(0.22)
 
     def test_txt_verification_with_primary(self):
         """TXT_VERIFICATION with primary signals boosts confidence."""
@@ -302,8 +302,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.INDEPENDENT
-        # Evidence present but no MX → 0.50 base + 1 extra kind × 0.02
-        assert result.confidence == pytest.approx(0.52)
+        # No MX, secondary evidence only → 0.20 base + 1 extra kind × 0.02
+        assert result.confidence == pytest.approx(0.22)
 
     def test_asn_with_primary(self):
         """ASN evidence with primary signals boosts confidence."""
@@ -331,8 +331,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.INDEPENDENT
-        # Evidence present but no MX → 0.50 base + 1 extra kind × 0.02
-        assert result.confidence == pytest.approx(0.52)
+        # No MX, secondary evidence only → 0.20 base + 1 extra kind × 0.02
+        assert result.confidence == pytest.approx(0.22)
 
     def test_spf_ip_alone_no_winner(self):
         """SPF_IP(Google) alone → INDEPENDENT (regression test for zuerich.ch)."""
@@ -341,8 +341,8 @@ class TestAggregate:
         ]
         result = _aggregate(evidence)
         assert result.provider == Provider.INDEPENDENT
-        # Evidence present but no MX → 0.50 base + 1 extra kind × 0.02
-        assert result.confidence == pytest.approx(0.52)
+        # No MX, secondary evidence only → 0.20 base + 1 extra kind × 0.02
+        assert result.confidence == pytest.approx(0.22)
 
     def test_spf_ip_with_primary(self):
         """MX(Google) + SPF_IP(Google) → Google with boosted confidence."""
