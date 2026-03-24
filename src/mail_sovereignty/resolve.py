@@ -403,6 +403,13 @@ def extract_email_domains(html: str) -> set[str]:
                     domains.add(domain)
                 break
 
+    for match in re.findall(r'[\w.-]+\s*[\[(]at[\])]\s*[\w.-]+\.\w+', html, re.IGNORECASE):
+        normalized = re.sub(r'\s*[\[(]at[\])]\s*', '@', match, flags=re.IGNORECASE)
+        if "@" in normalized:
+            domain = normalized.split("@")[1].lower()
+            if domain not in SKIP_DOMAINS:
+                domains.add(domain)
+
     return {d for d in domains if _is_valid_domain(d)}
 
 

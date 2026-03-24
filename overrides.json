@@ -75,6 +75,7 @@
   "6195": {"domain": "loetschen.ch", "reason": "Shared Lötschental admin"},
   "6197": {"domain": "loetschen.ch", "reason": "Shared Lötschental admin"},
   "6205": {"domain": "gemeinde-bettmeralp.ch", "reason": "as on website"},
+  "6285": {"domain": "graechen.ch", "reason": "Wikidata URL incorrect (gemeinde-graechen.ch has SSL issues); actual website at gemeinde.graechen.ch, email on graechen.ch (MS365)"},
   "6404": {"domain": "ne.ch", "reason": "Using cantonal mail"},
   "6408": {"domain": "ne.ch", "reason": "Using cantonal mail"},
   "6413": {"domain": "ne.ch", "reason": "Using cantonal mail"},

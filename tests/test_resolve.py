@@ -483,6 +483,26 @@ class TestExtractEmailDomains:
         domains = extract_email_domains(html)
         assert "example.org" in domains
 
+    def test_bracket_at_obfuscation(self):
+        html = "gemeinde[at]graechen.ch"
+        assert "graechen.ch" in extract_email_domains(html)
+
+    def test_paren_at_obfuscation(self):
+        html = "info(at)gemeinde.ch"
+        assert "gemeinde.ch" in extract_email_domains(html)
+
+    def test_bracket_at_with_spaces(self):
+        html = "info [at] town.ch"
+        assert "town.ch" in extract_email_domains(html)
+
+    def test_bracket_at_uppercase(self):
+        html = "admin[AT]village.ch"
+        assert "village.ch" in extract_email_domains(html)
+
+    def test_bracket_at_skip_domain(self):
+        html = "user[at]example.com"
+        assert extract_email_domains(html) == set()
+
     def test_domain_label_too_long(self):
         """Domains with labels > 63 chars should be filtered out."""
         long_label = "a" * 64
