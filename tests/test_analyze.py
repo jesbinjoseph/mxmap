@@ -34,9 +34,24 @@ _MUNIS = {
         "category": "us-cloud",
         "classification_confidence": 95.0,
         "classification_signals": [
-            {"kind": "mx", "provider": "microsoft", "weight": 0.2, "detail": "mx match"},
-            {"kind": "spf", "provider": "microsoft", "weight": 0.2, "detail": "spf match"},
-            {"kind": "autodiscover", "provider": "microsoft", "weight": 0.08, "detail": "ad match"},
+            {
+                "kind": "mx",
+                "provider": "microsoft",
+                "weight": 0.2,
+                "detail": "mx match",
+            },
+            {
+                "kind": "spf",
+                "provider": "microsoft",
+                "weight": 0.2,
+                "detail": "spf match",
+            },
+            {
+                "kind": "autodiscover",
+                "provider": "microsoft",
+                "weight": 0.08,
+                "detail": "ad match",
+            },
         ],
         "mx": ["mail.protection.outlook.com"],
         "spf": "v=spf1 include:spf.protection.outlook.com -all",
@@ -51,8 +66,18 @@ _MUNIS = {
         "category": "swiss-based",
         "classification_confidence": 90.0,
         "classification_signals": [
-            {"kind": "mx", "provider": "independent", "weight": 0.2, "detail": "mx match"},
-            {"kind": "spf", "provider": "independent", "weight": 0.2, "detail": "spf match"},
+            {
+                "kind": "mx",
+                "provider": "independent",
+                "weight": 0.2,
+                "detail": "mx match",
+            },
+            {
+                "kind": "spf",
+                "provider": "independent",
+                "weight": 0.2,
+                "detail": "spf match",
+            },
         ],
         "mx": ["mail.bern.ch"],
         "spf": "v=spf1 a mx -all",
@@ -67,7 +92,12 @@ _MUNIS = {
         "category": "swiss-based",
         "classification_confidence": 50.0,
         "classification_signals": [
-            {"kind": "spf", "provider": "infomaniak", "weight": 0.2, "detail": "spf match"},
+            {
+                "kind": "spf",
+                "provider": "infomaniak",
+                "weight": 0.2,
+                "detail": "spf match",
+            },
         ],
         "mx": ["mxpool.infomaniak.com"],
         "spf": "v=spf1 include:spf.infomaniak.ch -all",
@@ -82,8 +112,18 @@ _MUNIS = {
         "category": "swiss-based",
         "classification_confidence": 55.0,
         "classification_signals": [
-            {"kind": "spf", "provider": "infomaniak", "weight": 0.2, "detail": "spf match"},
-            {"kind": "mx", "provider": "microsoft", "weight": 0.2, "detail": "mx conflict"},
+            {
+                "kind": "spf",
+                "provider": "infomaniak",
+                "weight": 0.2,
+                "detail": "spf match",
+            },
+            {
+                "kind": "mx",
+                "provider": "microsoft",
+                "weight": 0.2,
+                "detail": "mx conflict",
+            },
         ],
         "mx": ["mxpool.infomaniak.com"],
         "spf": "v=spf1 include:spf.infomaniak.ch -all",
@@ -201,7 +241,9 @@ def test_report_low_confidence(capsys: pytest.CaptureFixture[str]) -> None:
     assert "Conflicting primary" in out
 
 
-def test_report_low_confidence_shows_conflicts(capsys: pytest.CaptureFixture[str]) -> None:
+def test_report_low_confidence_shows_conflicts(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     report_low_confidence(_MUNIS)
     out = capsys.readouterr().out
     # muni 4 has mx pointing to microsoft but winner is infomaniak
@@ -235,7 +277,9 @@ def test_main(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_no_color_env(capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_no_color_env(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
     """When NO_COLOR is set, output must not contain ANSI escape codes."""
     monkeypatch.setenv("NO_COLOR", "1")
     # Re-import to pick up env var change -- instead just test the _c helper

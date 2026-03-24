@@ -45,7 +45,6 @@ def _yellow(t: str) -> str:
     return _c("33", t)
 
 
-
 # ---------------------------------------------------------------------------
 # Formatting helpers
 # ---------------------------------------------------------------------------
@@ -325,7 +324,7 @@ def report_gateways(munis: dict[str, Any]) -> None:
 
     print(
         f"  Municipalities with gateway: "
-        f"{_bold(str(len(with_gw)))} / {total} ({len(with_gw)/total*100:.1f}%)"
+        f"{_bold(str(len(with_gw)))} / {total} ({len(with_gw) / total * 100:.1f}%)"
     )
 
     # Per-gateway counts
@@ -338,11 +337,7 @@ def report_gateways(munis: dict[str, Any]) -> None:
 
     # Provider distribution with/without gateway
     print("\n  Provider distribution:\n")
-    print(
-        f"  {'Provider':<16}"
-        f"  {'With GW':>8} {'%':>6}"
-        f"  {'No GW':>8} {'%':>6}"
-    )
+    print(f"  {'Provider':<16}  {'With GW':>8} {'%':>6}  {'No GW':>8} {'%':>6}")
     _sep()
     for prov in _PROVIDERS_ORDERED:
         cnt_w = sum(1 for m in with_gw.values() if m["provider"] == prov)
@@ -379,11 +374,8 @@ def report_domain_sharing(munis: dict[str, Any]) -> None:
     _sep()
     for domain, ms in shared_sorted:
         names = ", ".join(m["name"] for m in ms[:4])
-        suffix = f", +{len(ms)-4}" if len(ms) > 4 else ""
-        print(
-            f"  {domain:<30} {len(ms):>5}  {ms[0]['provider']:<14} "
-            f"{names}{suffix}"
-        )
+        suffix = f", +{len(ms) - 4}" if len(ms) > 4 else ""
+        print(f"  {domain:<30} {len(ms):>5}  {ms[0]['provider']:<14} {names}{suffix}")
 
 
 # ---------------------------------------------------------------------------
@@ -395,11 +387,7 @@ def report_low_confidence(munis: dict[str, Any]) -> None:
     _header("LOW-CONFIDENCE / REVIEW CANDIDATES")
 
     # Low confidence
-    low = [
-        m
-        for m in munis.values()
-        if m["classification_confidence"] < 60
-    ]
+    low = [m for m in munis.values() if m["classification_confidence"] < 60]
     low.sort(key=lambda m: m["classification_confidence"])
 
     print(f"  Municipalities with confidence < 60%: {_red(str(len(low)))}")
@@ -440,10 +428,7 @@ def report_low_confidence(munis: dict[str, Any]) -> None:
     if conflicts:
         conflicts.sort(key=lambda x: len(x[2]), reverse=True)
         print()
-        print(
-            f"  {'BFS':>5}  {'Name':<28} {'Winner':<14} "
-            f"{'Conflict':>14}  Signals"
-        )
+        print(f"  {'BFS':>5}  {'Name':<28} {'Winner':<14} {'Conflict':>14}  Signals")
         _sep()
         for m, other, kinds in conflicts[:20]:
             print(
