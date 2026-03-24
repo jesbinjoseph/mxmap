@@ -102,8 +102,8 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
   display: inline-block; padding: 0 5px; border-radius: 3px;
   font-size: 10px; font-weight: 600; line-height: 1.6;
 }
-.cat-badge.hyperscaler { background: #fde8e8; color: #b2182b; }
-.cat-badge.swiss { background: #e0edf5; color: #2166ac; }
+.cat-badge.hyperscaler { background: #ffe8e6; color: #b33a30; }
+.cat-badge.swiss { background: #e0f5e9; color: #2d7a4f; }
 .cat-badge.foreign { background: #fef3c7; color: #b45309; }
 .cat-badge.unknown { background: #f3f4f6; color: #6b7280; }
 
