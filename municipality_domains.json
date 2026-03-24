@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-19T12:49:38Z",
+  "generated": "2026-03-24T08:45:38Z",
   "total": 2110,
   "municipalities": {
     "1": {
@@ -658,9 +658,11 @@
       "canton": "Kanton Zürich",
       "domain": "volken.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "volken.ch.incamail.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "volken.ch"
@@ -669,7 +671,9 @@
           "volken.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "51": {
       "bfs": "51",
@@ -1863,7 +1867,7 @@
       "bfs": "136",
       "name": "Langnau am Albis",
       "canton": "",
-      "domain": "langnau.ch",
+      "domain": "solicom.ch",
       "source": "scrape",
       "confidence": "medium",
       "sources_detail": {
@@ -2717,18 +2721,12 @@
       "bfs": "220",
       "name": "Hagenbuch",
       "canton": "Kanton Zürich",
-      "domain": "hagenbuch.zh.ch",
-      "source": "wikidata",
+      "domain": "hagenbuch-zh.ch",
+      "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [],
-        "wikidata": [
-          "hagenbuch.zh.ch"
-        ],
-        "guess": [
-          "hagenbuch.ch",
-          "hagenbuch.zh.ch"
+        "override": [
+          "hagenbuch-zh.ch"
         ]
       },
       "flags": []
@@ -2803,18 +2801,12 @@
       "bfs": "225",
       "name": "Rickenbach (ZH)",
       "canton": "Kanton Zürich",
-      "domain": "rickenbach.zh.ch",
-      "source": "wikidata",
+      "domain": "rickenbach-zh.ch",
+      "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [],
-        "wikidata": [
-          "rickenbach.zh.ch"
-        ],
-        "guess": [
-          "rickenbach.ch",
-          "rickenbach.zh.ch"
+        "override": [
+          "rickenbach-zh.ch"
         ]
       },
       "flags": []
@@ -3346,10 +3338,12 @@
       "name": "Bargen (BE)",
       "canton": "Kanton Bern",
       "domain": "bargen-be.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "bargen-be.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "bargen-be.ch"
@@ -3427,10 +3421,12 @@
       "name": "Lyss",
       "canton": "Kanton Bern",
       "domain": "lyss.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "lyss.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "lyss.ch"
@@ -3467,10 +3463,12 @@
       "name": "Radelfingen",
       "canton": "Kanton Bern",
       "domain": "radelfingen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "radelfingen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "radelfingen.ch"
@@ -3722,12 +3720,10 @@
       "name": "Melchnau",
       "canton": "Kanton Bern",
       "domain": "melchnau.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "melchnau.ch"
-        ],
+        "scrape": [],
         "redirect": [],
         "wikidata": [
           "melchnau.ch"
@@ -4251,10 +4247,12 @@
       "name": "Arch",
       "canton": "Kanton Bern",
       "domain": "arch-be.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "arch-be.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "arch-be.ch"
@@ -4496,7 +4494,6 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "greenmail.ch",
           "wengi-be.ch"
         ],
         "redirect": [],
@@ -5284,10 +5281,12 @@
       "name": "Finsterhennen",
       "canton": "Kanton Bern",
       "domain": "finsterhennen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "finsterhennen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "finsterhennen.ch"
@@ -5402,10 +5401,12 @@
       "name": "Siselen",
       "canton": "Kanton Bern",
       "domain": "siselen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "siselen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "siselen.ch"
@@ -5440,10 +5441,12 @@
       "name": "Tschugg",
       "canton": "Kanton Bern",
       "domain": "tschugg.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "tschugg.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "tschugg.ch"
@@ -5459,10 +5462,12 @@
       "name": "Vinelz",
       "canton": "Kanton Bern",
       "domain": "vinelz.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "vinelz.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "vinelz.ch"
@@ -5832,10 +5837,12 @@
       "name": "Kandersteg",
       "canton": "Kanton Bern",
       "domain": "gemeindekandersteg.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "gemeindekandersteg.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "gemeindekandersteg.ch"
@@ -7305,10 +7312,12 @@
       "name": "Sorvilier",
       "canton": "Kanton Bern",
       "domain": "sorvilier.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "sorvilier.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "sorvilier.ch"
@@ -7516,10 +7525,12 @@
       "name": "Bühl",
       "canton": "Kanton Bern",
       "domain": "buehl.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "buehl.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "buehl.ch"
@@ -7850,10 +7861,12 @@
       "name": "Sutz-Lattrigen",
       "canton": "Kanton Bern",
       "domain": "sutz-lattrigen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "sutz-lattrigen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "sutz-lattrigen.ch"
@@ -8009,10 +8022,12 @@
       "name": "Oberwil im Simmental",
       "canton": "Kanton Bern",
       "domain": "oberwil-im-simmental.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "oberwil-im-simmental.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "oberwil-im-simmental.ch"
@@ -8896,10 +8911,12 @@
       "name": "Signau",
       "canton": "Kanton Bern",
       "domain": "signau.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "signau.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "signau.ch"
@@ -9287,10 +9304,12 @@
       "name": "Thierachern",
       "canton": "Kanton Bern",
       "domain": "thierachern.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "thierachern.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "thierachern.ch"
@@ -9622,10 +9641,12 @@
       "name": "Attiswil",
       "canton": "Kanton Bern",
       "domain": "attiswil.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "attiswil.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "attiswil.ch"
@@ -9919,10 +9940,12 @@
       "name": "Walliswil bei Niederbipp",
       "canton": "Kanton Bern",
       "domain": "walliswil-bipp.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "walliswil-bipp.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "walliswil-bipp.ch"
@@ -12309,10 +12332,12 @@
       "name": "Vorderthal",
       "canton": "Kanton Schwyz",
       "domain": "vorderthal.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "vorderthal.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "vorderthal.ch"
@@ -12743,8 +12768,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "lungern.ch",
-          "lungern.ow.ch"
+          "lungern.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -13206,25 +13230,14 @@
       "name": "Steinhausen",
       "canton": "Kanton Zug",
       "domain": "steinhausen.ch",
-      "source": "scrape",
-      "confidence": "medium",
+      "source": "override",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "steinhausen.ch"
-        ],
-        "redirect": [
-          "zg.ch"
-        ],
-        "wikidata": [
-          "steinhausen.ch"
-        ],
-        "guess": [
+        "override": [
           "steinhausen.ch"
         ]
       },
-      "flags": [
-        "sources_disagree"
-      ]
+      "flags": []
     },
     "1709": {
       "bfs": "1709",
@@ -13314,11 +13327,13 @@
       "bfs": "2011",
       "name": "Cugy (FR)",
       "canton": "Kanton Freiburg",
-      "domain": "cugy-fr.ch",
-      "source": "wikidata",
+      "domain": "hemmer.ch",
+      "source": "scrape",
       "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "cugy-fr.ch"
@@ -13327,7 +13342,9 @@
           "cugy.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2022": {
       "bfs": "2022",
@@ -13357,6 +13374,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
+          "hemmer.ch",
           "lully-fr.ch"
         ],
         "redirect": [],
@@ -13399,6 +13417,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
+          "hemmer.ch",
           "nuvilly.ch"
         ],
         "redirect": [],
@@ -13439,6 +13458,7 @@
       "confidence": "medium",
       "sources_detail": {
         "scrape": [
+          "hemmer.ch",
           "saint-aubin.ch"
         ],
         "redirect": [
@@ -13461,9 +13481,11 @@
       "canton": "Kanton Freiburg",
       "domain": "sevaz.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "sevaz.ch"
@@ -13472,7 +13494,9 @@
           "sevaz.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2044": {
       "bfs": "2044",
@@ -13520,9 +13544,11 @@
       "canton": "Kanton Freiburg",
       "domain": "les-montets.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "les-montets.ch"
@@ -13531,7 +13557,9 @@
           "les-montets.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2051": {
       "bfs": "2051",
@@ -13542,7 +13570,8 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "delley-portalban.ch"
+          "delley-portalban.ch",
+          "hemmer.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -13581,9 +13610,11 @@
       "canton": "Kanton Freiburg",
       "domain": "estavayer.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "estavayer.ch"
@@ -13592,7 +13623,9 @@
           "estavayer.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2055": {
       "bfs": "2055",
@@ -13653,10 +13686,12 @@
       "name": "Le Châtelard",
       "canton": "Kanton Freiburg",
       "domain": "le-chatelard.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "le-chatelard.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "le-chatelard.ch"
@@ -13799,10 +13834,13 @@
       "name": "Siviriez",
       "canton": "Kanton Freiburg",
       "domain": "siviriez.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch",
+          "siviriez.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "siviriez.ch"
@@ -13842,7 +13880,9 @@
       "source": "wikidata",
       "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [
           "vuisternens.ch"
         ],
@@ -13920,7 +13960,8 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "haut-intyamon.ch"
+          "haut-intyamon.ch",
+          "hemmer.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -14328,9 +14369,11 @@
       "canton": "Kanton Freiburg",
       "domain": "sorens.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "sorens.ch"
@@ -14339,7 +14382,9 @@
           "sorens.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2155": {
       "bfs": "2155",
@@ -14492,9 +14537,11 @@
       "canton": "Kanton Freiburg",
       "domain": "chenens.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "chenens.ch"
@@ -14503,7 +14550,9 @@
           "chenens.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2183": {
       "bfs": "2183",
@@ -14514,7 +14563,8 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "corminboeuf.ch"
+          "corminboeuf.ch",
+          "hemmer.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -14593,9 +14643,11 @@
       "canton": "Kanton Freiburg",
       "domain": "givisiez.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "givisiez.ch"
@@ -14604,7 +14656,9 @@
           "givisiez.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2198": {
       "bfs": "2198",
@@ -14632,10 +14686,12 @@
       "name": "Marly",
       "canton": "Kanton Freiburg",
       "domain": "marly.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "marly.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "marly.ch"
@@ -14655,6 +14711,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
+          "hemmer.ch",
           "matran.ch"
         ],
         "redirect": [],
@@ -14697,6 +14754,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
+          "hemmer.ch",
           "pierrafortscha.ch"
         ],
         "redirect": [],
@@ -14718,6 +14776,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
+          "hemmer.ch",
           "le-mouret.ch"
         ],
         "redirect": [],
@@ -14861,10 +14920,13 @@
       "name": "Gibloux",
       "canton": "Kanton Freiburg",
       "domain": "commune-gibloux.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "commune-gibloux.ch",
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "commune-gibloux.ch"
@@ -14885,6 +14947,7 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
+          "hemmer.ch",
           "prez.ch"
         ],
         "redirect": [],
@@ -14993,7 +15056,8 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "cressier.ch"
+          "cressier.ch",
+          "hemmer.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -15029,10 +15093,12 @@
       "name": "Greng",
       "canton": "Kanton Freiburg",
       "domain": "greng.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "greng.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "greng.ch"
@@ -15069,10 +15135,12 @@
       "name": "Kerzers",
       "canton": "Kanton Freiburg",
       "domain": "kerzers.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "kerzers.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "kerzers.ch"
@@ -15220,10 +15288,12 @@
       "name": "Mont-Vully",
       "canton": "Kanton Freiburg",
       "domain": "mont-vully.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "mont-vully.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "mont-vully.ch"
@@ -15699,9 +15769,11 @@
       "canton": "Kanton Freiburg",
       "domain": "leflon.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "leflon.ch"
@@ -15710,7 +15782,9 @@
           "leflon.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "2338": {
       "bfs": "2338",
@@ -17090,10 +17164,12 @@
       "name": "Flumenthal",
       "canton": "Kanton Solothurn",
       "domain": "flumenthal.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "flumenthal.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "flumenthal.ch"
@@ -17518,10 +17594,12 @@
       "name": "Rickenbach (SO)",
       "canton": "Kanton Solothurn",
       "domain": "rickenbachso.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "rickenbachso.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "rickenbachso.ch"
@@ -18463,18 +18541,12 @@
       "bfs": "2792",
       "name": "Wahlen",
       "canton": "Kanton Basel-Landschaft",
-      "domain": "wahlen.ch",
-      "source": "wikidata",
+      "domain": "gemeinde-wahlen.ch",
+      "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [],
-        "wikidata": [
-          "wahlen.ch"
-        ],
-        "guess": [
-          "gemeinde-wahlen.ch",
-          "wahlen.ch"
+        "override": [
+          "gemeinde-wahlen.ch"
         ]
       },
       "flags": []
@@ -19940,7 +20012,8 @@
           "buchberg.ch",
           "forst-rafzerfeld.ch",
           "hallau.ch",
-          "ruedlingen.ch"
+          "ruedlingen.ch",
+          "sh.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -22311,24 +22384,14 @@
       "name": "Vaz/Obervaz",
       "canton": "Kanton Graubünden",
       "domain": "vazobervaz.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "override",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [
-          "schule-vazobervaz.ch"
-        ],
-        "wikidata": [
-          "vazobervaz.ch"
-        ],
-        "guess": [
-          "vaz.ch",
+        "override": [
           "vazobervaz.ch"
         ]
       },
-      "flags": [
-        "sources_disagree"
-      ]
+      "flags": []
     },
     "3513": {
       "bfs": "3513",
@@ -22418,10 +22481,12 @@
       "name": "Bergün Filisur",
       "canton": "Kanton Graubünden",
       "domain": "berguenfilisur.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "berguenfilisur.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "berguenfilisur.ch"
@@ -23060,7 +23125,8 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "domat-ems.ch"
+          "domat-ems.ch",
+          "gbde.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -23960,12 +24026,9 @@
       "canton": "Kanton Graubünden",
       "domain": "chur.ch",
       "source": "wikidata",
-      "confidence": "medium",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "handmade-music.ch",
-          "klibuehni.ch"
-        ],
+        "scrape": [],
         "redirect": [],
         "wikidata": [
           "chur.ch"
@@ -23974,9 +24037,7 @@
           "chur.ch"
         ]
       },
-      "flags": [
-        "sources_disagree"
-      ]
+      "flags": []
     },
     "3911": {
       "bfs": "3911",
@@ -24504,10 +24565,12 @@
       "name": "Gränichen",
       "canton": "Kanton Aargau",
       "domain": "graenichen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "graenichen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "graenichen.ch"
@@ -24708,10 +24771,11 @@
       "name": "Birmenstorf (AG)",
       "canton": "Kanton Aargau",
       "domain": "birmenstorf.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
         "scrape": [
+          "birmenstorf.ch",
           "h.ie",
           "n.ua"
         ],
@@ -24723,19 +24787,19 @@
           "birmenstorf.ch"
         ]
       },
-      "flags": [
-        "sources_disagree"
-      ]
+      "flags": []
     },
     "4026": {
       "bfs": "4026",
       "name": "Ennetbaden",
       "canton": "Kanton Aargau",
       "domain": "ennetbaden.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "ennetbaden.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "ennetbaden.ch"
@@ -24751,10 +24815,12 @@
       "name": "Fislisbach",
       "canton": "Kanton Aargau",
       "domain": "fislisbach.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "fislisbach.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "fislisbach.ch"
@@ -24810,10 +24876,12 @@
       "name": "Killwangen",
       "canton": "Kanton Aargau",
       "domain": "killwangen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "killwangen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "killwangen.ch"
@@ -24850,10 +24918,12 @@
       "name": "Mägenwil",
       "canton": "Kanton Aargau",
       "domain": "maegenwil.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "maegenwil.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "maegenwil.ch"
@@ -24889,10 +24959,12 @@
       "name": "Neuenhof",
       "canton": "Kanton Aargau",
       "domain": "neuenhof.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "neuenhof.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "neuenhof.ch"
@@ -24929,10 +25001,12 @@
       "name": "Oberrohrdorf",
       "canton": "Kanton Aargau",
       "domain": "oberrohrdorf.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "oberrohrdorf.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "oberrohrdorf.ch"
@@ -24948,10 +25022,13 @@
       "name": "Obersiggenthal",
       "canton": "Kanton Aargau",
       "domain": "obersiggenthal.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "convalere.ch",
+          "obersiggenthal.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "obersiggenthal.ch"
@@ -24967,10 +25044,12 @@
       "name": "Remetschwil",
       "canton": "Kanton Aargau",
       "domain": "remetschwil.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "remetschwil.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "remetschwil.ch"
@@ -24986,10 +25065,12 @@
       "name": "Spreitenbach",
       "canton": "Kanton Aargau",
       "domain": "spreitenbach.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "spreitenbach.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "spreitenbach.ch"
@@ -25066,10 +25147,12 @@
       "name": "Wohlenschwil",
       "canton": "Kanton Aargau",
       "domain": "wohlenschwil.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "wohlenschwil.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "wohlenschwil.ch"
@@ -25106,10 +25189,12 @@
       "name": "Würenlos",
       "canton": "Kanton Aargau",
       "domain": "wuerenlos.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "wuerenlos.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "wuerenlos.ch"
@@ -26680,10 +26765,12 @@
       "name": "Ammerswil",
       "canton": "Kanton Aargau",
       "domain": "ammerswil.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "ammerswil.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "ammerswil.ch"
@@ -26847,12 +26934,10 @@
       "name": "Holderbank (AG)",
       "canton": "Kanton Aargau",
       "domain": "holderbank.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "holderbank.ch"
-        ],
+        "scrape": [],
         "redirect": [],
         "wikidata": [
           "holderbank.ch"
@@ -28152,7 +28237,8 @@
       "confidence": "high",
       "sources_detail": {
         "scrape": [
-          "doettingen.ch"
+          "doettingen.ch",
+          "megura.ch"
         ],
         "redirect": [],
         "wikidata": [
@@ -28212,18 +28298,10 @@
       "name": "Full-Reuenthal",
       "canton": "Kanton Aargau",
       "domain": "full-reuenthal.ch",
-      "source": "scrape",
+      "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "full-reuenthal.ch",
-          "leibstadt.ch"
-        ],
-        "redirect": [],
-        "wikidata": [
-          "full-reuenthal.ch"
-        ],
-        "guess": [
+        "override": [
           "full-reuenthal.ch"
         ]
       },
@@ -28255,10 +28333,13 @@
       "name": "Koblenz",
       "canton": "Kanton Aargau",
       "domain": "koblenz.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "koblenz.ch",
+          "megura.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "koblenz.ch"
@@ -28507,10 +28588,12 @@
       "name": "Hefenhofen",
       "canton": "Kanton Thurgau",
       "domain": "hefenhofen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hefenhofen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "hefenhofen.ch"
@@ -28735,9 +28818,11 @@
       "canton": "Kanton Thurgau",
       "domain": "hauptwil-gottshaus.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "pghg.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "hauptwil-gottshaus.ch"
@@ -28746,7 +28831,9 @@
           "hauptwil-gottshaus.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "4495": {
       "bfs": "4495",
@@ -31845,10 +31932,12 @@
       "name": "Vacallo",
       "canton": "Kanton Tessin",
       "domain": "vacallo.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "vacallo.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "vacallo.ch"
@@ -32538,10 +32627,12 @@
       "name": "Berolle",
       "canton": "Kanton Waadt",
       "domain": "berolle.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "berolle.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "berolle.ch"
@@ -34612,10 +34703,12 @@
       "name": "Bremblens",
       "canton": "Kanton Waadt",
       "domain": "bremblens.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "bremblens.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "bremblens.ch"
@@ -35018,10 +35111,12 @@
       "name": "Saint-Sulpice (VD)",
       "canton": "Kanton Waadt",
       "domain": "st-sulpice.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "st-sulpice.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "st-sulpice.ch"
@@ -35423,10 +35518,12 @@
       "name": "Rossenges",
       "canton": "Kanton Waadt",
       "domain": "rossenges.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "rossenges.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "rossenges.ch"
@@ -35788,10 +35885,12 @@
       "name": "Crassier",
       "canton": "Kanton Waadt",
       "domain": "crassier.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "crassier.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "crassier.ch"
@@ -36699,12 +36798,10 @@
       "name": "Ropraz",
       "canton": "Kanton Waadt",
       "domain": "ropraz.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "ropraz.ch"
-        ],
+        "scrape": [],
         "redirect": [],
         "wikidata": [
           "ropraz.ch"
@@ -36762,10 +36859,12 @@
       "name": "Jorat-Menthue",
       "canton": "Kanton Waadt",
       "domain": "jorat-menthue.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "jorat-menthue.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "jorat-menthue.ch"
@@ -37523,10 +37622,12 @@
       "name": "Montreux",
       "canton": "Kanton Waadt",
       "domain": "montreux.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "montreux.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "montreux.ch"
@@ -37720,9 +37821,11 @@
       "canton": "Kanton Waadt",
       "domain": "chene-paquier.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "chene-paquier.ch"
@@ -37731,7 +37834,9 @@
           "chene-paquier.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "5909": {
       "bfs": "5909",
@@ -37780,10 +37885,12 @@
       "name": "Cuarny",
       "canton": "Kanton Waadt",
       "domain": "cuarny.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "cuarny.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "cuarny.ch"
@@ -37799,10 +37906,12 @@
       "name": "Démoret",
       "canton": "Kanton Waadt",
       "domain": "demoret.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "demoret.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "demoret.ch"
@@ -37856,12 +37965,10 @@
       "name": "Mathod",
       "canton": "Kanton Waadt",
       "domain": "mathod.ch",
-      "source": "scrape",
+      "source": "wikidata",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [
-          "mathod.ch"
-        ],
+        "scrape": [],
         "redirect": [],
         "wikidata": [
           "mathod.ch"
@@ -37899,10 +38006,12 @@
       "name": "Montagny-près-Yverdon",
       "canton": "Kanton Waadt",
       "domain": "montagny.ch",
-      "source": "wikidata",
-      "confidence": "medium",
+      "source": "scrape",
+      "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "montagny.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "montagny.ch"
@@ -38176,10 +38285,12 @@
       "name": "Yverdon-les-Bains",
       "canton": "Kanton Waadt",
       "domain": "yverdon-les-bains.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "yverdon-les-bains.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "yverdon-les-bains.ch"
@@ -38492,10 +38603,12 @@
       "name": "Orsières",
       "canton": "Kanton Wallis",
       "domain": "orsieres.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "orsieres.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "orsieres.ch"
@@ -38821,9 +38934,11 @@
       "canton": "Kanton Wallis",
       "domain": "mont-noble.ch",
       "source": "wikidata",
-      "confidence": "high",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "hemmer.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "mont-noble.ch"
@@ -38832,7 +38947,9 @@
           "mont-noble.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "6101": {
       "bfs": "6101",
@@ -38860,10 +38977,12 @@
       "name": "Albinen",
       "canton": "Kanton Wallis",
       "domain": "albinen.ch",
-      "source": "wikidata",
+      "source": "scrape",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
+        "scrape": [
+          "albinen.ch"
+        ],
         "redirect": [],
         "wikidata": [
           "albinen.ch"
@@ -39355,12 +39474,10 @@
       "name": "Saint-Gingolph",
       "canton": "Kanton Wallis",
       "domain": "st-gingolph.ch",
-      "source": "scrape",
-      "confidence": "high",
+      "source": "wikidata",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [
-          "st-gingolph.ch"
-        ],
+        "scrape": [],
         "redirect": [],
         "wikidata": [
           "st-gingolph.ch"
@@ -40312,17 +40429,11 @@
       "bfs": "6285",
       "name": "Grächen",
       "canton": "Kanton Wallis",
-      "domain": "gemeinde-graechen.ch",
-      "source": "wikidata",
+      "domain": "graechen.ch",
+      "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [],
-        "wikidata": [
-          "gemeinde-graechen.ch"
-        ],
-        "guess": [
-          "gemeinde-graechen.ch",
+        "override": [
           "graechen.ch"
         ]
       },
@@ -40398,19 +40509,12 @@
       "bfs": "6289",
       "name": "Saas-Balen",
       "canton": "Kanton Wallis",
-      "domain": "gemeinde-saas-balen.ch",
-      "source": "wikidata",
+      "domain": "3908.ch",
+      "source": "override",
       "confidence": "high",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [],
-        "wikidata": [
-          "gemeinde-saas-balen.ch"
-        ],
-        "guess": [
-          "gemeinde-saas-balen.ch",
-          "saas-balen.ch",
-          "saasbalen.ch"
+        "override": [
+          "3908.ch"
         ]
       },
       "flags": []
@@ -40443,12 +40547,16 @@
       "bfs": "6291",
       "name": "Saas-Grund",
       "canton": "Kanton Wallis",
-      "domain": "saas-grund.ch",
-      "source": "wikidata",
-      "confidence": "high",
+      "domain": "saas-fee.ch",
+      "source": "scrape",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [],
+        "scrape": [
+          "saas-fee.ch"
+        ],
+        "redirect": [
+          "saas-fee.ch"
+        ],
         "wikidata": [
           "saas-grund.ch"
         ],
@@ -40457,7 +40565,9 @@
           "saasgrund.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "6292": {
       "bfs": "6292",
@@ -40590,11 +40700,16 @@
       "name": "Visperterminen",
       "canton": "Kanton Wallis",
       "domain": "visperterminen.ch",
-      "source": "wikidata",
-      "confidence": "high",
+      "source": "scrape",
+      "confidence": "medium",
       "sources_detail": {
-        "scrape": [],
-        "redirect": [],
+        "scrape": [
+          "heidadorf.ch",
+          "visperterminen.ch"
+        ],
+        "redirect": [
+          "heidadorf.ch"
+        ],
         "wikidata": [
           "visperterminen.ch"
         ],
@@ -40602,7 +40717,9 @@
           "visperterminen.ch"
         ]
       },
-      "flags": []
+      "flags": [
+        "sources_disagree"
+      ]
     },
     "6299": {
       "bfs": "6299",
