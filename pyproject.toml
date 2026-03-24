@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 resolve-domains = "mail_sovereignty.cli:resolve_domains"
 classify-providers = "mail_sovereignty.cli:classify_providers"
+analyze = "mail_sovereignty.cli:analyze"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mail_sovereignty"]

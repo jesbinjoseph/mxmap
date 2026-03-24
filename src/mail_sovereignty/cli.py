@@ -36,3 +36,9 @@ def classify_providers() -> None:
     setup_logging(args.verbose)
 
     asyncio.run(run(Path("municipality_domains.json"), Path("data.json")))
+
+
+def analyze() -> None:
+    from mail_sovereignty.analyze import main
+
+    main()
