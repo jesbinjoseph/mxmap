@@ -11,8 +11,8 @@ class Provider(str, enum.Enum):
     MS365 = "ms365"
     GOOGLE = "google"
     AWS = "aws"
-    INFOMANIAK = "infomaniak"
-    SWISS_ISP = "swiss-isp"
+    NIC = "nic"
+    INDIAN_ISP = "indian-isp"
     INDEPENDENT = "independent"
 
 

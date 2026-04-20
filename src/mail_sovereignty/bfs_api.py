@@ -1,12 +1,11 @@
 import csv
 import io
 import time
+from pathlib import Path
 
 import httpx
 import stamina
 from loguru import logger
-
-from mail_sovereignty.constants import BFS_API_URL, CANTON_SHORT_TO_FULL
 
 
 @stamina.retry(
@@ -21,77 +20,71 @@ async def _fetch(client: httpx.AsyncClient, url: str, params: dict) -> httpx.Res
 
 
 def _parse_csv_response(text: str) -> list[dict]:
-    """Parse the BFS API CSV response into a list of dicts."""
+    """Parse a municipality CSV into a list of dicts.
+
+    Expected columns: LGDCode,Name,State,Type
+    Type: MC (Municipal Corporation), M (Municipality), NP (Nagar Panchayat),
+          CT (Census Town), Cap (State Capital)
+    """
     reader = csv.DictReader(io.StringIO(text))
     entries = []
     for row in reader:
         entries.append(
             {
-                "historicalCode": int(row["HistoricalCode"]),
-                "bfsCode": int(row["BfsCode"]),
-                "level": int(row["Level"]),
-                "parent": int(row["Parent"]) if row.get("Parent") else None,
-                "name": row["Name"],
-                "shortName": row["ShortName"],
+                "lgdCode": row["LGDCode"].strip(),
+                "name": row["Name"].strip(),
+                "state": row["State"].strip(),
+                "type": row.get("Type", "M").strip(),
             }
         )
     return entries
 
 
 async def fetch_bfs_municipalities(date: str | None = None) -> dict[str, dict]:
-    """Fetch municipality list from BFS REST API.
+    """Fetch Indian municipality list from local CSV data.
+
+    The Indian Local Government Directory doesn't provide a convenient
+    REST API like Switzerland's BFS. We use a curated CSV of major
+    Indian municipalities (municipal corporations, municipalities,
+    nagar panchayats) with their LGD codes.
 
     Args:
-        date: Optional date in DD-MM-YYYY format. Defaults to today.
+        date: Ignored (kept for interface compatibility).
 
     Returns:
-        Dict mapping BFS code (str) to {"bfs", "name", "canton"}.
+        Dict mapping LGD code (str) to {"bfs": lgd_code, "name", "canton": state}.
     """
-    if date is None:
-        date = time.strftime("%d-%m-%Y")
-
-    logger.info("Fetching municipalities from BFS (date={})...".format(date))
-
-    async with httpx.AsyncClient(timeout=60) as client:
-        t0 = time.monotonic()
-        r = await _fetch(client, BFS_API_URL, {"date": date})
-        logger.debug(
-            "BFS API response: {} bytes in {:.1f}s", len(r.text), time.monotonic() - t0
+    csv_path = Path(__file__).parent.parent.parent / "indian_municipalities.csv"
+    if not csv_path.exists():
+        logger.warning(
+            "indian_municipalities.csv not found at {}, returning empty list",
+            csv_path,
         )
-        entries = _parse_csv_response(r.text)
+        return {}
 
-    # Build lookup by HistoricalCode for parent resolution
-    by_hist_code: dict[int, dict] = {}
-    for entry in entries:
-        by_hist_code[entry["historicalCode"]] = entry
+    logger.info("Loading Indian municipalities from {}...", csv_path)
+    t0 = time.monotonic()
 
-    # Filter to Level 3 (communes) and resolve cantons
+    text = csv_path.read_text(encoding="utf-8")
+    entries = _parse_csv_response(text)
+
     municipalities: dict[str, dict] = {}
     for entry in entries:
-        if entry["level"] != 3:
-            continue
-
-        bfs_code = str(entry["bfsCode"])
+        lgd_code = entry["lgdCode"]
         name = entry["name"]
+        state = entry["state"]
+        entity_type = entry.get("type", "M")
 
-        # Resolve canton: commune -> district (Level 2) -> canton (Level 1)
-        canton = ""
-        parent = by_hist_code.get(entry.get("parent"))
-        if parent and parent["level"] == 2:
-            grandparent = by_hist_code.get(parent.get("parent"))
-            if grandparent and grandparent["level"] == 1:
-                canton_short = grandparent.get("shortName", "").lower()
-                canton = CANTON_SHORT_TO_FULL.get(canton_short, "")
-        elif parent and parent["level"] == 1:
-            # Direct parent is canton (some cantons have no districts)
-            canton_short = parent.get("shortName", "").lower()
-            canton = CANTON_SHORT_TO_FULL.get(canton_short, "")
-
-        municipalities[bfs_code] = {
-            "bfs": bfs_code,
+        municipalities[lgd_code] = {
+            "bfs": lgd_code,
             "name": name,
-            "canton": canton,
+            "canton": state,
+            "type": entity_type,
         }
 
-    logger.info("BFS API: {} municipalities", len(municipalities))
+    logger.info(
+        "Loaded {} municipalities in {:.1f}s",
+        len(municipalities),
+        time.monotonic() - t0,
+    )
     return municipalities

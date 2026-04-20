@@ -1,31 +1,34 @@
 import re
 
-BFS_API_URL = "https://www.agvchapp.bfs.admin.ch/api/communes/snapshot"
+# India: Local Government Directory API for municipality data
+LGD_API_URL = "https://lgdirectory.gov.in/webservices/lgdws/statemaster"
+# Keep old name as alias for backward compatibility in imports
+BFS_API_URL = LGD_API_URL
 
 SPARQL_URL = "https://query.wikidata.org/sparql"
 SPARQL_QUERY = """
-SELECT ?item ?itemLabel ?bfs ?website ?cantonLabel WHERE {
-  ?item wdt:P31 wd:Q70208 .          # instance of: municipality of Switzerland
-  ?item wdt:P771 ?bfs .              # Swiss municipality code (BFS number)
-  FILTER NOT EXISTS {                  # exclude dissolved municipalities
+SELECT ?item ?itemLabel ?lgdCode ?website ?stateLabel WHERE {
+  {
+    ?item wdt:P31 wd:Q515 .            # instance of: city
+  } UNION {
+    ?item wdt:P31 wd:Q1115575 .        # instance of: municipal corporation (India)
+  } UNION {
+    ?item wdt:P31 wd:Q2555896 .        # instance of: municipality of India
+  } UNION {
+    ?item wdt:P31 wd:Q1371849 .        # instance of: nagar panchayat
+  }
+  ?item wdt:P17 wd:Q668 .              # country: India
+  ?item wdt:P4890 ?lgdCode .           # LGD code
+  FILTER NOT EXISTS {
     ?item wdt:P576 ?dissolved .
     FILTER(?dissolved <= NOW())
   }
-  FILTER NOT EXISTS {                  # exclude municipalities with ended P31 statement
-    ?item p:P31 ?stmt .
-    ?stmt ps:P31 wd:Q70208 .
-    ?stmt pq:P582 ?endTime .
-    FILTER(?endTime <= NOW())
-  }
-  FILTER NOT EXISTS {                  # exclude municipalities replaced by a successor
-    ?item wdt:P1366 ?successor .
-  }
   OPTIONAL { ?item wdt:P856 ?website . }
-  OPTIONAL { ?item wdt:P131+ ?canton .
-             ?canton wdt:P31 wd:Q23058 . }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "de,fr,it,rm,en" . }
+  OPTIONAL { ?item wdt:P131 ?state .
+             ?state wdt:P31 wd:Q131541 . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,hi" . }
 }
-ORDER BY xsd:integer(?bfs)
+ORDER BY xsd:integer(?lgdCode)
 """
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
@@ -34,7 +37,6 @@ TYPO3_RE = re.compile(
 )
 SKIP_DOMAINS = {
     "example.com",
-    "example.ch",
     "sentry.io",
     "w3.org",
     "gstatic.com",
@@ -43,17 +45,14 @@ SKIP_DOMAINS = {
     # Generic email providers (not municipality-specific)
     "gmail.com",
     "hotmail.com",
-    "hotmail.ch",
     "outlook.com",
-    "gmx.ch",
-    "bluewin.ch",
     "yahoo.com",
-    # Shared hosting / CMS / web agencies
-    "domain.com",
-    "pregny-chambesy.ch",  # shared Abaco CMS template
-    "netconsult.ch",
-    "bbf.ch",
-    "dp-wired.de",
+    "yahoo.co.in",
+    "rediffmail.com",
+    # Generic Indian portals
+    "india.gov.in",
+    "digitalindia.gov.in",
+    "mygov.in",
     # Web framework / analytics
     "google.com",
     "group.calendar.google.com",
@@ -61,58 +60,71 @@ SKIP_DOMAINS = {
     "mail.com",
     "wordpress.org",
     "defiant.com",
-    "schedulista.com",
-    "zurich-airport.com",
-    "avasad.ch",
+    "domain.com",
 }
 
 SUBPAGES = [
-    "/kontakt",
     "/contact",
-    "/impressum",
-    "/kontakt/",
+    "/contact-us",
+    "/contactus",
+    "/about",
+    "/about-us",
     "/contact/",
-    "/impressum/",
-    "/de/kontakt",
-    "/fr/contact",
-    "/it/contatto",
-    "/verwaltung",
+    "/contact-us/",
+    "/about/",
+    "/directory",
+    "/officials",
     "/administration",
-    "/autorites",
-    "/gemeinde",
-    "/commune",
-    "/comune",
+    "/departments",
+    "/en/contact",
+    "/hi/contact",
 ]
 
-CANTON_ABBREVIATIONS = {
-    "Kanton Zürich": "zh",
-    "Kanton Bern": "be",
-    "Kanton Luzern": "lu",
-    "Kanton Uri": "ur",
-    "Kanton Schwyz": "sz",
-    "Kanton Obwalden": "ow",
-    "Kanton Nidwalden": "nw",
-    "Kanton Glarus": "gl",
-    "Kanton Zug": "zg",
-    "Kanton Freiburg": "fr",
-    "Kanton Solothurn": "so",
-    "Kanton Basel-Stadt": "bs",
-    "Kanton Basel-Landschaft": "bl",
-    "Kanton Schaffhausen": "sh",
-    "Kanton Appenzell Ausserrhoden": "ar",
-    "Kanton Appenzell Innerrhoden": "ai",
-    "Kanton St. Gallen": "sg",
-    "Kanton Graubünden": "gr",
-    "Kanton Aargau": "ag",
-    "Kanton Thurgau": "tg",
-    "Kanton Tessin": "ti",
-    "Kanton Waadt": "vd",
-    "Kanton Wallis": "vs",
-    "Kanton Neuenburg": "ne",
-    "Kanton Genf": "ge",
-    "Kanton Jura": "ju",
+# Indian state/UT codes (ISO 3166-2:IN)
+STATE_ABBREVIATIONS = {
+    "Andhra Pradesh": "ap",
+    "Arunachal Pradesh": "ar",
+    "Assam": "as",
+    "Bihar": "br",
+    "Chhattisgarh": "cg",
+    "Goa": "ga",
+    "Gujarat": "gj",
+    "Haryana": "hr",
+    "Himachal Pradesh": "hp",
+    "Jharkhand": "jh",
+    "Karnataka": "ka",
+    "Kerala": "kl",
+    "Madhya Pradesh": "mp",
+    "Maharashtra": "mh",
+    "Manipur": "mn",
+    "Meghalaya": "ml",
+    "Mizoram": "mz",
+    "Nagaland": "nl",
+    "Odisha": "od",
+    "Punjab": "pb",
+    "Rajasthan": "rj",
+    "Sikkim": "sk",
+    "Tamil Nadu": "tn",
+    "Telangana": "tg",
+    "Tripura": "tr",
+    "Uttar Pradesh": "up",
+    "Uttarakhand": "uk",
+    "West Bengal": "wb",
+    # Union Territories
+    "Andaman and Nicobar Islands": "an",
+    "Chandigarh": "ch",
+    "Dadra and Nagar Haveli and Daman and Diu": "dd",
+    "Delhi": "dl",
+    "Jammu and Kashmir": "jk",
+    "Ladakh": "la",
+    "Lakshadweep": "ld",
+    "Puducherry": "py",
 }
 
-CANTON_SHORT_TO_FULL = {v: k for k, v in CANTON_ABBREVIATIONS.items()}
+# Keep old name as alias for backward compat
+CANTON_ABBREVIATIONS = STATE_ABBREVIATIONS
+
+STATE_SHORT_TO_FULL = {v: k for k, v in STATE_ABBREVIATIONS.items()}
+CANTON_SHORT_TO_FULL = STATE_SHORT_TO_FULL
 
 CONCURRENCY_POSTPROCESS = 10

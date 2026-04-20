@@ -68,17 +68,17 @@ SIGNATURES: list[ProviderSignature] = [
         asns=(16509, 14618),
     ),
     ProviderSignature(
-        provider=Provider.INFOMANIAK,
-        mx_patterns=("mxpool.infomaniak.com", "ikmail.com", "mta-gw.infomaniak.ch"),
-        spf_includes=("spf.infomaniak.ch",),
+        provider=Provider.NIC,
+        mx_patterns=("nic.in", "gov.in", "nicmail.nic.in", "mgovcloud.in"),
+        spf_includes=("nic.in", "gov.in", "mgovcloud.in"),
         dkim_selectors=(),
         dkim_cname_patterns=(),
         autodiscover_patterns=(),
-        cname_patterns=("infomaniak",),
+        cname_patterns=("nic.in", "gov.in", "mgovcloud.in"),
         dmarc_patterns=(),
-        smtp_banner_patterns=("infomaniak",),
+        smtp_banner_patterns=("nic.in", "gov.in", "mgovcloud.in"),
         txt_verification_patterns=(),
-        asns=(51786,),
+        asns=(4758, 9829),
     ),
 ]
 
@@ -93,27 +93,32 @@ GATEWAY_KEYWORDS: dict[str, list[str]] = {
     "sophos": ["hydra.sophos.com"],
     "cisco": ["iphmx.com"],
     "mimecast": ["mimecast.com"],
-    "spamvor": ["spamvor.com"],
-    "abxsec": ["abxsec.com"],
     "messagelabs": ["messagelabs.com"],
 }
 
 
-SWISS_ISP_ASNS: dict[int, str] = {
-    559: "SWITCH",
-    3303: "Swisscom",
-    6730: "Sunrise UPC",
-    6830: "Liberty Global (UPC/Sunrise)",
-    12399: "Sunrise",
-    13030: "Init7",
-    13213: "Cyberlink AG",
-    15576: "NTS",
-    15600: "Quickline",
-    15796: "Netzone AG",
-    24889: "Datapark AG",
-    29691: "Hostpoint / Green.ch",
-    51786: "Infomaniak Network SA",
+INDIAN_ISP_ASNS: dict[int, str] = {
+    4758: "NIC (National Informatics Centre)",
+    9829: "BSNL (Bharat Sanchar Nigam Ltd)",
+    9498: "Bharti Airtel",
+    18101: "Reliance Communications",
+    45528: "Tikona Infinet",
+    55836: "Reliance Jio",
+    24560: "Bharti Airtel (Telemedia)",
+    17762: "Tata Communications",
+    4755: "Tata Communications (VSNL)",
+    38266: "Vodafone Idea",
+    132524: "Excitel",
+    45820: "TATA Teleservices",
+    55644: "Cloudsek / Indian DC",
+    24186: "CtrlS Datacenters",
+    135647: "ESDS Software Solutions",
+    133982: "Yotta Infrastructure",
+    133275: "Sify Technologies",
 }
+
+# Alias for backward compat
+SWISS_ISP_ASNS = INDIAN_ISP_ASNS
 
 
 def match_patterns(value: str, patterns: tuple[str, ...] | list[str]) -> bool:

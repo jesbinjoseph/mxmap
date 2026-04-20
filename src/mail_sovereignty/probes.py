@@ -12,8 +12,8 @@ from .dns import resolve_robust
 from .models import Evidence, Provider, SignalKind
 from .signatures import (
     GATEWAY_KEYWORDS,
+    INDIAN_ISP_ASNS,
     SIGNATURES,
-    SWISS_ISP_ASNS,
     match_patterns,
 )
 
@@ -375,15 +375,15 @@ async def probe_asn(mx_hosts: list[str]) -> list[Evidence]:
                             )
                         )
 
-                # Check Swiss ISP ASNs
-                if asn_num in SWISS_ISP_ASNS:
-                    isp_name = SWISS_ISP_ASNS[asn_num]
+                # Check Indian ISP ASNs
+                if asn_num in INDIAN_ISP_ASNS:
+                    isp_name = INDIAN_ISP_ASNS[asn_num]
                     results.append(
                         Evidence(
                             kind=SignalKind.ASN,
-                            provider=Provider.SWISS_ISP,
+                            provider=Provider.INDIAN_ISP,
                             weight=WEIGHTS[SignalKind.ASN],
-                            detail=f"ASN {asn_num} is Swiss ISP: {isp_name}",
+                            detail=f"ASN {asn_num} is Indian ISP: {isp_name}",
                             raw=str(asn_num),
                         )
                     )
@@ -489,14 +489,14 @@ async def probe_spf_ip(domain: str) -> list[Evidence]:
                         )
                     )
 
-            if asn_num in SWISS_ISP_ASNS:
-                isp_name = SWISS_ISP_ASNS[asn_num]
+            if asn_num in INDIAN_ISP_ASNS:
+                isp_name = INDIAN_ISP_ASNS[asn_num]
                 results.append(
                     Evidence(
                         kind=SignalKind.SPF_IP,
-                        provider=Provider.SWISS_ISP,
+                        provider=Provider.INDIAN_ISP,
                         weight=WEIGHTS[SignalKind.SPF_IP],
-                        detail=f"SPF ip4/a ASN {asn_num} is Swiss ISP: {isp_name}",
+                        detail=f"SPF ip4/a ASN {asn_num} is Indian ISP: {isp_name}",
                         raw=f"{ip}:{asn_num}",
                     )
                 )

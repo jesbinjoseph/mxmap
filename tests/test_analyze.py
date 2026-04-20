@@ -27,9 +27,9 @@ from mail_sovereignty.analyze import (
 _MUNIS = {
     "1": {
         "bfs": "1",
-        "name": "Zurich Town",
-        "canton": "Kanton Zürich",
-        "domain": "zurich.ch",
+        "name": "Mumbai",
+        "canton": "Maharashtra",
+        "domain": "mcgm.gov.in",
         "provider": "microsoft",
         "category": "us-cloud",
         "classification_confidence": 95.0,
@@ -59,11 +59,11 @@ _MUNIS = {
     },
     "2": {
         "bfs": "2",
-        "name": "Bern Village",
-        "canton": "Kanton Bern",
-        "domain": "bern.ch",
+        "name": "Delhi",
+        "canton": "Delhi",
+        "domain": "mcd.gov.in",
         "provider": "independent",
-        "category": "swiss-based",
+        "category": "india-based",
         "classification_confidence": 90.0,
         "classification_signals": [
             {
@@ -79,42 +79,42 @@ _MUNIS = {
                 "detail": "spf match",
             },
         ],
-        "mx": ["mail.bern.ch"],
+        "mx": ["mail.mcd.gov.in"],
         "spf": "v=spf1 a mx -all",
         "gateway": None,
     },
     "3": {
         "bfs": "3",
-        "name": "Genf City",
-        "canton": "Kanton Genf",
-        "domain": "shared.ch",
-        "provider": "infomaniak",
-        "category": "swiss-based",
+        "name": "Bengaluru",
+        "canton": "Karnataka",
+        "domain": "shared.gov.in",
+        "provider": "nic",
+        "category": "india-based",
         "classification_confidence": 50.0,
         "classification_signals": [
             {
                 "kind": "spf",
-                "provider": "infomaniak",
+                "provider": "nic",
                 "weight": 0.2,
                 "detail": "spf match",
             },
         ],
-        "mx": ["mxpool.infomaniak.com"],
-        "spf": "v=spf1 include:spf.infomaniak.ch -all",
+        "mx": ["nicmail.nic.in"],
+        "spf": "v=spf1 include:nic.in -all",
         "gateway": "seppmail",
     },
     "4": {
         "bfs": "4",
-        "name": "Genf Town",
-        "canton": "Kanton Genf",
-        "domain": "shared.ch",
-        "provider": "infomaniak",
-        "category": "swiss-based",
+        "name": "Hyderabad",
+        "canton": "Telangana",
+        "domain": "shared.gov.in",
+        "provider": "nic",
+        "category": "india-based",
         "classification_confidence": 55.0,
         "classification_signals": [
             {
                 "kind": "spf",
-                "provider": "infomaniak",
+                "provider": "nic",
                 "weight": 0.2,
                 "detail": "spf match",
             },
@@ -125,17 +125,17 @@ _MUNIS = {
                 "detail": "mx conflict",
             },
         ],
-        "mx": ["mxpool.infomaniak.com"],
-        "spf": "v=spf1 include:spf.infomaniak.ch -all",
+        "mx": ["nicmail.nic.in"],
+        "spf": "v=spf1 include:nic.in -all",
         "gateway": "seppmail",
     },
     "5": {
         "bfs": "5",
         "name": "No Signal Town",
         "canton": "",
-        "domain": "nosignal.ch",
+        "domain": "nosignal.gov.in",
         "provider": "independent",
-        "category": "swiss-based",
+        "category": "india-based",
         "classification_confidence": 60.0,
         "classification_signals": [],
         "mx": [],
@@ -148,7 +148,7 @@ _DATA = {
     "generated": "2026-03-24T00:00:00Z",
     "commit": "abc1234",
     "total": 5,
-    "counts": {"microsoft": 1, "independent": 2, "infomaniak": 2},
+    "counts": {"microsoft": 1, "independent": 2, "nic": 2},
     "municipalities": _MUNIS,
 }
 
@@ -184,16 +184,16 @@ def test_report_overall_summary(capsys: pytest.CaptureFixture[str]) -> None:
     assert "microsoft" in out
     assert "independent" in out
     assert "US Cloud" in out
-    assert "Swiss Based" in out
+    assert "India Based" in out
 
 
 def test_report_cantonal(capsys: pytest.CaptureFixture[str]) -> None:
     report_cantonal(_MUNIS)
     out = capsys.readouterr().out
-    assert "CANTONAL" in out
-    assert "ZH" in out
-    assert "BE" in out
-    assert "GE" in out
+    assert "STATE" in out
+    assert "MH" in out
+    assert "DL" in out
+    assert "KA" in out
     assert "??" in out  # empty canton
 
 
@@ -203,7 +203,7 @@ def test_report_confidence(capsys: pytest.CaptureFixture[str]) -> None:
     assert "CONFIDENCE" in out
     assert "Average confidence" in out
     assert "microsoft" in out
-    assert "infomaniak" in out
+    assert "nic" in out
 
 
 def test_report_signals(capsys: pytest.CaptureFixture[str]) -> None:
@@ -228,16 +228,16 @@ def test_report_domain_sharing(capsys: pytest.CaptureFixture[str]) -> None:
     report_domain_sharing(_MUNIS)
     out = capsys.readouterr().out
     assert "SHARED DOMAINS" in out
-    assert "shared.ch" in out
-    assert "Genf City" in out
+    assert "shared.gov.in" in out
+    assert "Bengaluru" in out
 
 
 def test_report_low_confidence(capsys: pytest.CaptureFixture[str]) -> None:
     report_low_confidence(_MUNIS)
     out = capsys.readouterr().out
     assert "LOW-CONFIDENCE" in out
-    assert "Genf City" in out  # confidence 50
-    assert "Genf Town" in out  # confidence 55
+    assert "Bengaluru" in out  # confidence 50
+    assert "Hyderabad" in out  # confidence 55
     assert "Conflicting primary" in out
 
 
@@ -264,7 +264,7 @@ def test_main(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
 
     out = capsys.readouterr().out
     assert "OVERALL SUMMARY" in out
-    assert "CANTONAL" in out
+    assert "STATE" in out
     assert "CONFIDENCE" in out
     assert "SIGNAL ANALYSIS" in out
     assert "GATEWAY" in out

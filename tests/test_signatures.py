@@ -3,8 +3,8 @@
 from mail_sovereignty.models import Provider
 from mail_sovereignty.signatures import (
     GATEWAY_KEYWORDS,
+    INDIAN_ISP_ASNS,
     SIGNATURES,
-    SWISS_ISP_ASNS,
     match_patterns,
 )
 
@@ -54,7 +54,7 @@ class TestSignatures:
             Provider.MS365,
             Provider.GOOGLE,
             Provider.AWS,
-            Provider.INFOMANIAK,
+            Provider.NIC,
         }
 
     def test_ms365_has_mx(self):
@@ -74,15 +74,15 @@ class TestSignatures:
         aws = next(s for s in SIGNATURES if s.provider == Provider.AWS)
         assert "amazonaws.com" in aws.mx_patterns
 
-    def test_infomaniak_has_mx(self):
-        infomaniak = next(s for s in SIGNATURES if s.provider == Provider.INFOMANIAK)
-        assert "mxpool.infomaniak.com" in infomaniak.mx_patterns
-        assert "ikmail.com" in infomaniak.mx_patterns
-        assert "mta-gw.infomaniak.ch" in infomaniak.mx_patterns
+    def test_nic_has_mx(self):
+        nic = next(s for s in SIGNATURES if s.provider == Provider.NIC)
+        assert "nic.in" in nic.mx_patterns
+        assert "gov.in" in nic.mx_patterns
+        assert "nicmail.nic.in" in nic.mx_patterns
 
-    def test_infomaniak_has_spf(self):
-        infomaniak = next(s for s in SIGNATURES if s.provider == Provider.INFOMANIAK)
-        assert "spf.infomaniak.ch" in infomaniak.spf_includes
+    def test_nic_has_spf(self):
+        nic = next(s for s in SIGNATURES if s.provider == Provider.NIC)
+        assert "nic.in" in nic.spf_includes
 
     def test_ms365_dkim_selectors(self):
         ms365 = next(s for s in SIGNATURES if s.provider == Provider.MS365)
@@ -139,13 +139,13 @@ class TestSignatures:
         assert 16509 in aws.asns
         assert 14618 in aws.asns
 
-    def test_infomaniak_asns(self):
-        infomaniak = next(s for s in SIGNATURES if s.provider == Provider.INFOMANIAK)
-        assert 51786 in infomaniak.asns
+    def test_nic_asns(self):
+        nic = next(s for s in SIGNATURES if s.provider == Provider.NIC)
+        assert 4758 in nic.asns
 
-    def test_infomaniak_smtp_banner(self):
-        infomaniak = next(s for s in SIGNATURES if s.provider == Provider.INFOMANIAK)
-        assert "infomaniak" in infomaniak.smtp_banner_patterns
+    def test_nic_smtp_banner(self):
+        nic = next(s for s in SIGNATURES if s.provider == Provider.NIC)
+        assert "nic.in" in nic.smtp_banner_patterns
 
 
 class TestGatewayKeywords:
@@ -173,15 +173,15 @@ class TestGatewayKeywords:
             assert len(patterns) > 0, f"Gateway {gw} has no patterns"
 
 
-class TestSwissIspAsns:
-    def test_swisscom(self):
-        assert SWISS_ISP_ASNS[3303] == "Swisscom"
+class TestIndianIspAsns:
+    def test_bsnl(self):
+        assert INDIAN_ISP_ASNS[9829] == "BSNL (Bharat Sanchar Nigam Ltd)"
 
-    def test_switch(self):
-        assert SWISS_ISP_ASNS[559] == "SWITCH"
+    def test_nic(self):
+        assert INDIAN_ISP_ASNS[4758] == "NIC (National Informatics Centre)"
 
-    def test_infomaniak(self):
-        assert SWISS_ISP_ASNS[51786] == "Infomaniak Network SA"
+    def test_airtel(self):
+        assert INDIAN_ISP_ASNS[9498] == "Bharti Airtel"
 
     def test_has_entries(self):
-        assert len(SWISS_ISP_ASNS) > 0
+        assert len(INDIAN_ISP_ASNS) > 0

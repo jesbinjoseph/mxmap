@@ -97,7 +97,7 @@ def load_data(path: Path) -> dict[str, Any]:
 
 _CANTON_LOOKUP = {k: v.upper() for k, v in CANTON_ABBREVIATIONS.items()}
 
-_PROVIDERS_ORDERED = ["microsoft", "google", "aws", "infomaniak", "independent"]
+_PROVIDERS_ORDERED = ["microsoft", "google", "aws", "nic", "indian-isp", "independent"]
 
 _PRIMARY_SIGNAL_KINDS = {"mx", "spf", "dkim", "autodiscover"}
 
@@ -131,10 +131,10 @@ def report_overall_summary(data: dict[str, Any], munis: dict[str, Any]) -> None:
     print()
     print(f"  {'Category':<16} {'Count':>6}  {'%':>6}  Bar")
     _sep()
-    for cat in ["us-cloud", "swiss-based"]:
+    for cat in ["us-cloud", "india-based"]:
         cnt = cat_counts[cat]
         color = _red if cat == "us-cloud" else _green
-        label = "US Cloud" if cat == "us-cloud" else "Swiss Based"
+        label = "US Cloud" if cat == "us-cloud" else "India Based"
         print(
             f"  {color(f'{label:<16}')} {cnt:>6,}  {_pct(cnt, total)}  "
             f"{color(_bar(cnt, total))}"
@@ -163,9 +163,9 @@ def report_overall_summary(data: dict[str, Any], munis: dict[str, Any]) -> None:
 
 
 def report_cantonal(munis: dict[str, Any]) -> None:
-    _header("CANTONAL BREAKDOWN (sorted by US-Cloud %)")
+    _header("STATE BREAKDOWN (sorted by US-Cloud %)")
 
-    # Group by canton
+    # Group by state
     by_canton: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for m in munis.values():
         by_canton[_canton_abbr(m.get("canton", ""))].append(m)
@@ -186,26 +186,26 @@ def report_cantonal(munis: dict[str, Any]) -> None:
     rows.sort(key=lambda r: r[3], reverse=True)
 
     hdr = (
-        f"  {'Canton':<8}{'Total':>5}"
+        f"  {'State':<8}{'Total':>5}"
         f"{'MSFT':>6}{'Goog':>6}{'AWS':>5}"
-        f"{'Info':>6}{'Indep':>6}"
-        f"  {'US%':>6}  {'Swiss%':>6}"
+        f"{'NIC':>6}{'Indep':>6}"
+        f"  {'US%':>6}  {'India%':>6}"
     )
     print(hdr)
     _sep()
 
     for abbr, total, pc, us_pct in rows:
-        swiss_pct = 100 - us_pct
+        india_pct = 100 - us_pct
         color = _red if us_pct >= 70 else (_yellow if us_pct >= 50 else _green)
         print(
             f"  {abbr:<8}{total:>5}"
             f"{pc.get('microsoft', 0):>6}"
             f"{pc.get('google', 0):>6}"
             f"{pc.get('aws', 0):>5}"
-            f"{pc.get('infomaniak', 0):>6}"
+            f"{pc.get('nic', 0):>6}"
             f"{pc.get('independent', 0):>6}"
             f"  {color(f'{us_pct:5.1f}%')}"
-            f"  {f'{swiss_pct:5.1f}%':>6}"
+            f"  {f'{india_pct:5.1f}%':>6}"
         )
 
 

@@ -1,0 +1,180 @@
+LGDCode,Name,State,Type
+1,Andhra Pradesh,Andhra Pradesh,State
+2,Arunachal Pradesh,Arunachal Pradesh,State
+3,Assam,Assam,State
+4,Bihar,Bihar,State
+5,Chhattisgarh,Chhattisgarh,State
+6,Goa,Goa,State
+7,Gujarat,Gujarat,State
+8,Haryana,Haryana,State
+9,Himachal Pradesh,Himachal Pradesh,State
+10,Jharkhand,Jharkhand,State
+11,Karnataka,Karnataka,State
+12,Kerala,Kerala,State
+13,Madhya Pradesh,Madhya Pradesh,State
+14,Maharashtra,Maharashtra,State
+15,Manipur,Manipur,State
+16,Meghalaya,Meghalaya,State
+17,Mizoram,Mizoram,State
+18,Nagaland,Nagaland,State
+19,Odisha,Odisha,State
+20,Punjab,Punjab,State
+21,Rajasthan,Rajasthan,State
+22,Sikkim,Sikkim,State
+23,Tamil Nadu,Tamil Nadu,State
+24,Telangana,Telangana,State
+25,Tripura,Tripura,State
+26,Uttar Pradesh,Uttar Pradesh,State
+27,Uttarakhand,Uttarakhand,State
+28,West Bengal,West Bengal,State
+29,Delhi,Delhi,UT
+30,Chandigarh,Chandigarh,UT
+31,Jammu and Kashmir,Jammu and Kashmir,UT
+32,Ladakh,Ladakh,UT
+33,Puducherry,Puducherry,UT
+34,Andaman and Nicobar Islands,Andaman and Nicobar Islands,UT
+35,Lakshadweep,Lakshadweep,UT
+36,Dadra and Nagar Haveli and Daman and Diu,Dadra and Nagar Haveli and Daman and Diu,UT
+500,Mumbai District,Maharashtra,District
+501,Pune District,Maharashtra,District
+502,Nagpur District,Maharashtra,District
+503,Thane District,Maharashtra,District
+504,Nashik District,Maharashtra,District
+505,Aurangabad District,Maharashtra,District
+506,Solapur District,Maharashtra,District
+507,Kolhapur District,Maharashtra,District
+508,Sangli District,Maharashtra,District
+509,Ratnagiri District,Maharashtra,District
+510,Lucknow District,Uttar Pradesh,District
+511,Kanpur District,Uttar Pradesh,District
+512,Agra District,Uttar Pradesh,District
+513,Varanasi District,Uttar Pradesh,District
+514,Allahabad District,Uttar Pradesh,District
+515,Meerut District,Uttar Pradesh,District
+516,Ghaziabad District,Uttar Pradesh,District
+517,Noida District,Uttar Pradesh,District
+518,Bareilly District,Uttar Pradesh,District
+519,Gorakhpur District,Uttar Pradesh,District
+520,Patna District,Bihar,District
+521,Gaya District,Bihar,District
+522,Muzaffarpur District,Bihar,District
+523,Bhagalpur District,Bihar,District
+530,Jaipur District,Rajasthan,District
+531,Jodhpur District,Rajasthan,District
+532,Udaipur District,Rajasthan,District
+533,Kota District,Rajasthan,District
+534,Ajmer District,Rajasthan,District
+540,Ahmedabad District,Gujarat,District
+541,Surat District,Gujarat,District
+542,Vadodara District,Gujarat,District
+543,Rajkot District,Gujarat,District
+544,Gandhinagar District,Gujarat,District
+550,Bengaluru Urban District,Karnataka,District
+551,Mysuru District,Karnataka,District
+552,Mangaluru District,Karnataka,District
+553,Hubli-Dharwad District,Karnataka,District
+560,Chennai District,Tamil Nadu,District
+561,Coimbatore District,Tamil Nadu,District
+562,Madurai District,Tamil Nadu,District
+563,Tiruchirappalli District,Tamil Nadu,District
+564,Salem District,Tamil Nadu,District
+570,Hyderabad District,Telangana,District
+571,Warangal District,Telangana,District
+572,Nizamabad District,Telangana,District
+580,Thiruvananthapuram District,Kerala,District
+581,Kochi District,Kerala,District
+582,Kozhikode District,Kerala,District
+583,Thrissur District,Kerala,District
+590,Bhopal District,Madhya Pradesh,District
+591,Indore District,Madhya Pradesh,District
+592,Jabalpur District,Madhya Pradesh,District
+593,Gwalior District,Madhya Pradesh,District
+600,Kolkata District,West Bengal,District
+601,Howrah District,West Bengal,District
+602,North 24 Parganas District,West Bengal,District
+603,South 24 Parganas District,West Bengal,District
+604,Hooghly District,West Bengal,District
+610,Raipur District,Chhattisgarh,District
+611,Bilaspur District,Chhattisgarh,District
+620,Ranchi District,Jharkhand,District
+621,Jamshedpur District,Jharkhand,District
+622,Dhanbad District,Jharkhand,District
+630,Bhubaneswar District,Odisha,District
+631,Cuttack District,Odisha,District
+632,Rourkela District,Odisha,District
+640,Dehradun District,Uttarakhand,District
+641,Haridwar District,Uttarakhand,District
+650,Shimla District,Himachal Pradesh,District
+660,Guwahati District,Assam,District
+661,Silchar District,Assam,District
+670,Ludhiana District,Punjab,District
+671,Amritsar District,Punjab,District
+672,Jalandhar District,Punjab,District
+680,Panaji District,Goa,District
+681,Margao District,Goa,District
+690,Imphal District,Manipur,District
+691,Shillong District,Meghalaya,District
+692,Aizawl District,Mizoram,District
+693,Kohima District,Nagaland,District
+694,Agartala District,Tripura,District
+695,Itanagar District,Arunachal Pradesh,District
+696,Gangtok District,Sikkim,District
+700,Faridabad District,Haryana,District
+701,Gurugram District,Haryana,District
+702,Karnal District,Haryana,District
+1001,Municipal Corporation of Greater Mumbai,Maharashtra,MC
+1002,Municipal Corporation of Delhi,Delhi,MC
+1003,Bruhat Bengaluru Mahanagara Palike,Karnataka,MC
+1004,Greater Hyderabad Municipal Corporation,Telangana,MC
+1005,Ahmedabad Municipal Corporation,Gujarat,MC
+1006,Greater Chennai Corporation,Tamil Nadu,MC
+1007,Kolkata Municipal Corporation,West Bengal,MC
+1008,Pune Municipal Corporation,Maharashtra,MC
+1009,Surat Municipal Corporation,Gujarat,MC
+1010,Jaipur Municipal Corporation,Rajasthan,MC
+1011,Lucknow Municipal Corporation,Uttar Pradesh,MC
+1012,Kanpur Municipal Corporation,Uttar Pradesh,MC
+1013,Nagpur Municipal Corporation,Maharashtra,MC
+1014,Indore Municipal Corporation,Madhya Pradesh,MC
+1015,Bhopal Municipal Corporation,Madhya Pradesh,MC
+1016,Vadodara Municipal Corporation,Gujarat,MC
+1017,Pimpri-Chinchwad Municipal Corporation,Maharashtra,MC
+1018,Navi Mumbai Municipal Corporation,Maharashtra,MC
+1019,Kalyan-Dombivli Municipal Corporation,Maharashtra,MC
+1020,Thane Municipal Corporation,Maharashtra,MC
+1021,Rajkot Municipal Corporation,Gujarat,MC
+1022,New Delhi Municipal Council,Delhi,MC
+1023,Vishakhapatnam Municipal Corporation,Andhra Pradesh,MC
+1024,Coimbatore City Municipal Corporation,Tamil Nadu,MC
+1025,Madurai City Municipal Corporation,Tamil Nadu,MC
+1026,Bhubaneswar Municipal Corporation,Odisha,MC
+1027,Raipur Municipal Corporation,Chhattisgarh,MC
+1028,Dehradun Municipal Corporation,Uttarakhand,MC
+1029,Ranchi Municipal Corporation,Jharkhand,MC
+1030,Patna Municipal Corporation,Bihar,MC
+1031,Agra Municipal Corporation,Uttar Pradesh,MC
+1032,Varanasi Municipal Corporation,Uttar Pradesh,MC
+1033,Meerut Municipal Corporation,Uttar Pradesh,MC
+1034,Ghaziabad Municipal Corporation,Uttar Pradesh,MC
+1035,Ludhiana Municipal Corporation,Punjab,MC
+1036,Amritsar Municipal Corporation,Punjab,MC
+1037,Guwahati Municipal Corporation,Assam,MC
+1038,Chandigarh Municipal Corporation,Chandigarh,MC
+1039,Shimla Municipal Corporation,Himachal Pradesh,MC
+1040,Mysuru City Corporation,Karnataka,MC
+1041,Mangaluru City Corporation,Karnataka,MC
+1042,Hubli-Dharwad Municipal Corporation,Karnataka,MC
+1043,Thiruvananthapuram Municipal Corporation,Kerala,MC
+1044,Kochi Municipal Corporation,Kerala,MC
+1045,Kozhikode Municipal Corporation,Kerala,MC
+1046,Warangal Municipal Corporation,Telangana,MC
+1047,Jodhpur Municipal Corporation,Rajasthan,MC
+1048,Kota Municipal Corporation,Rajasthan,MC
+1049,Udaipur Municipal Corporation,Rajasthan,MC
+1050,Jabalpur Municipal Corporation,Madhya Pradesh,MC
+1051,Gwalior Municipal Corporation,Madhya Pradesh,MC
+1052,Faridabad Municipal Corporation,Haryana,MC
+1053,Gurugram Municipal Corporation,Haryana,MC
+1054,Imphal Municipal Corporation,Manipur,MC
+1055,Agartala Municipal Corporation,Tripura,MC
+1056,Gangtok Municipal Corporation,Sikkim,MC
