@@ -12,9 +12,9 @@ function initMap(elementId) {
   }
 
   var map = L.map(elementId, {
-    center: [46.8, 8.2],
-    zoom: 8,
-    minZoom: 7,
+    center: [22.0, 78.0],
+    zoom: 5,
+    minZoom: 4,
     maxZoom: 14,
     renderer: L.canvas()
   });
@@ -77,7 +77,7 @@ function toggleLegend() {
 function showGenerated(dnsData) {
   if (dnsData.generated) {
     var date = new Date(dnsData.generated);
-    var text = 'Updated ' + date.toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
+    var text = 'Updated ' + date.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
     if (dnsData.commit) {
       text += ' \u00b7 ' + dnsData.commit;
     }
@@ -98,7 +98,7 @@ function addLakes(map, topo, lakeColor) {
 
 async function fetchMapData() {
   var responses = await Promise.all([
-    fetch('https://unpkg.com/swiss-maps@4.7.0/2026/ch-combined.json'),
+    fetch('https://raw.githubusercontent.com/udit-001/india-maps-data/main/topojson/india.json'),
     fetch('data.min.json')
   ]);
   return {

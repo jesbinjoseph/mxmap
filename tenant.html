@@ -90,24 +90,28 @@ var TENANT_COLORS = {
   lake: '#afd7f5',
 };
 
-var CANTON_CODES = {
-  'Kanton Zürich': 'ZH', 'Kanton Bern': 'BE', 'Kanton Luzern': 'LU',
-  'Kanton Uri': 'UR', 'Kanton Schwyz': 'SZ', 'Kanton Obwalden': 'OW',
-  'Kanton Nidwalden': 'NW', 'Kanton Glarus': 'GL', 'Kanton Zug': 'ZG',
-  'Kanton Freiburg': 'FR', 'Kanton Solothurn': 'SO', 'Kanton Basel-Stadt': 'BS',
-  'Kanton Basel-Landschaft': 'BL', 'Kanton Schaffhausen': 'SH',
-  'Kanton Appenzell Ausserrhoden': 'AR', 'Kanton Appenzell Innerrhoden': 'AI',
-  'Kanton St. Gallen': 'SG', 'Kanton Graubünden': 'GR', 'Kanton Aargau': 'AG',
-  'Kanton Thurgau': 'TG', 'Kanton Tessin': 'TI', 'Kanton Waadt': 'VD',
-  'Kanton Wallis': 'VS', 'Kanton Neuenburg': 'NE', 'Kanton Genf': 'GE',
-  'Kanton Jura': 'JU'
+var STATE_CODES = {
+  'Andhra Pradesh': 'AP', 'Arunachal Pradesh': 'AR', 'Assam': 'AS',
+  'Bihar': 'BR', 'Chhattisgarh': 'CG', 'Goa': 'GA',
+  'Gujarat': 'GJ', 'Haryana': 'HR', 'Himachal Pradesh': 'HP',
+  'Jharkhand': 'JH', 'Karnataka': 'KA', 'Kerala': 'KL',
+  'Madhya Pradesh': 'MP', 'Maharashtra': 'MH', 'Manipur': 'MN',
+  'Meghalaya': 'ML', 'Mizoram': 'MZ', 'Nagaland': 'NL',
+  'Odisha': 'OD', 'Punjab': 'PB', 'Rajasthan': 'RJ',
+  'Sikkim': 'SK', 'Tamil Nadu': 'TN', 'Telangana': 'TG',
+  'Tripura': 'TR', 'Uttar Pradesh': 'UP', 'Uttarakhand': 'UK',
+  'West Bengal': 'WB', 'Delhi': 'DL', 'Chandigarh': 'CH',
+  'Jammu and Kashmir': 'JK', 'Ladakh': 'LA', 'Puducherry': 'PY',
+  'Andaman and Nicobar Islands': 'AN', 'Lakshadweep': 'LD',
+  'Dadra and Nagar Haveli and Daman and Diu': 'DD'
 };
+var CANTON_CODES = STATE_CODES;
 var LABELS = {
   microsoft:     'Microsoft 365',
   google:        'Google Workspace',
   aws:           'Amazon Web Services',
-  infomaniak:    'Infomaniak',
-  'swiss-isp':   'Swiss ISP',
+  nic:           'NIC (Gov India)',
+  'indian-isp':  'Indian ISP',
   'independent': 'Self-hosted / Other',
   unknown:       'Unknown'
 };
@@ -176,44 +180,66 @@ async function loadData() {
   // Lakes
   lakeLayer = addLakes(map, topo, TENANT_COLORS.lake);
 
-  // Municipalities
-  var geojson = topojson.feature(topo, topo.objects.municipalities);
+  // Build state → municipalities mapping
+  var stateData = {};
+  for (var bfs of Object.keys(muni)) {
+    var m = muni[bfs];
+    var state = m.canton || '';
+    if (!stateData[state]) stateData[state] = [];
+    stateData[state].push(Object.assign({ bfs: bfs }, m));
+  }
+
+  // Determine dominant tenant color for a state
+  function getDominantColor(munis) {
+    if (!munis || munis.length === 0) return '#eee';
+    var counts = { managed: 0, federated: 0, none: 0 };
+    for (var i = 0; i < munis.length; i++) {
+      counts[getTenantStatus(munis[i])]++;
+    }
+    if (counts.managed >= counts.federated && counts.managed >= counts.none) return TENANT_COLORS.managed;
+    if (counts.federated >= counts.none) return TENANT_COLORS.federated;
+    return TENANT_COLORS.none;
+  }
+
+  // Render states
+  var statesObj = topo.objects.states || topo.objects.districts || Object.values(topo.objects)[0];
+  var geojson = topojson.feature(topo, statesObj);
 
   muniLayer = L.geoJSON(geojson, {
     style: function (feature) {
-      var bfs = String(feature.id);
-      var m = muni[bfs];
+      var stateName = feature.id || (feature.properties && feature.properties.st_nm) || '';
+      var munis = stateData[stateName] || [];
       return {
-        fillColor: getColor(m),
+        fillColor: getDominantColor(munis),
         weight: 0.6,
         color: '#afafaf',
-        fillOpacity: 1
+        fillOpacity: munis.length > 0 ? 1 : 0.3
       };
     },
     onEachFeature: function (feature, layer) {
-      var bfs = String(feature.id);
-      var m = muni[bfs];
-      if (!m) {
-        layer.bindPopup('<div class="info-popup"><strong>BFS ' + bfs + '</strong><br>No data</div>');
+      var stateName = feature.id || (feature.properties && feature.properties.st_nm) || '';
+      var munis = stateData[stateName] || [];
+      var stateCode = STATE_CODES[stateName] || '';
+      var stateLabel = stateCode ? escapeHtml(stateName) + ' (' + stateCode + ')' : escapeHtml(stateName);
+
+      if (munis.length === 0) {
+        layer.bindPopup('<div class="info-popup"><strong>' + stateLabel + '</strong><br>No municipalities tracked</div>');
         return;
       }
-      var status = getTenantStatus(m);
-      var statusLabel = getTenantLabel(status);
-      var color = TENANT_COLORS[status];
-      var textColor = status === 'none' ? '#333' : '#fff';
 
-      var eName = escapeHtml(m.name);
-      var cantonCode = CANTON_CODES[m.canton] || '';
-      var nameDisplay = cantonCode ? eName + ' (' + cantonCode + ')' : eName;
-      var eDomain = escapeHtml(m.domain || 'unknown');
-
-      // Tenant badge
-      var badge = '<span class="tenant-badge" style="background:' + color + ';color:' + textColor + '">' + statusLabel + '</span>';
+      var items = munis.map(function (m) {
+        var status = getTenantStatus(m);
+        var statusLabel = getTenantLabel(status);
+        var color = TENANT_COLORS[status];
+        var textColor = status === 'none' ? '#333' : '#fff';
+        var badge = '<span class="tenant-badge" style="background:' + color + ';color:' + textColor + ';font-size:0.75em;padding:1px 4px">' + statusLabel + '</span>';
+        return '<div style="margin:2px 0"><strong>' + escapeHtml(m.name) + '</strong> &mdash; ' + escapeHtml(m.domain || 'unknown') + ' ' + badge + '</div>';
+      }).join('');
 
       layer.bindPopup(
         '<div class="info-popup">' +
-        '<strong>' + nameDisplay + '</strong><br>' +
-        eDomain + ' ' + badge +
+        '<strong>' + stateLabel + '</strong> &mdash; ' + munis.length + ' municipalit' + (munis.length === 1 ? 'y' : 'ies') + '<br>' +
+        items +
         '</div>',
         { maxWidth: 350 }
       );

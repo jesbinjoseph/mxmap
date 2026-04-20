@@ -13,22 +13,22 @@
 <link rel="dns-prefetch" href="https://b.basemaps.cartocdn.com">
 <link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com">
 <link rel="dns-prefetch" href="https://d.basemaps.cartocdn.com">
-<title>MXmap — Email Providers of Swiss Municipalities</title>
-<meta name="description" content="Interactive map showing the email providers of all ~2,100 Swiss municipalities, based on DNS analysis of MX and SPF records.">
-<meta name="keywords" content="Switzerland, municipalities, email, sovereignty, CLOUD Act, MX records, SPF, DNS, Microsoft 365, Google Workspace, digital sovereignty, data protection">
+<title>MXmap — Email Providers of Indian Municipalities</title>
+<meta name="description" content="Interactive map showing the email providers of Indian municipalities, based on DNS analysis of MX and SPF records.">
+<meta name="keywords" content="India, municipalities, email, sovereignty, MX records, SPF, DNS, Microsoft 365, Google Workspace, digital sovereignty, data protection, DPDP Act">
 <meta name="author" content="David Huser">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://mxmap.ch/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="MXmap — Email Providers of Swiss Municipalities">
-<meta property="og:description" content="Interactive map showing where Swiss municipalities host their official email. DNS analysis of all ~2,100 municipalities, color-coded by provider.">
+<meta property="og:title" content="MXmap — Email Providers of Indian Municipalities">
+<meta property="og:description" content="Interactive map showing where Indian municipalities host their official email. DNS analysis of municipalities, color-coded by provider.">
 <meta property="og:url" content="https://mxmap.ch/">
 <meta property="og:locale" content="en_CH">
 <meta property="og:site_name" content="MXmap">
 <meta property="og:image" content="https://mxmap.ch/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="MXmap — Email Providers of Swiss Municipalities">
-<meta name="twitter:description" content="Interactive map showing where Swiss municipalities host their official email. DNS analysis of all ~2,100 municipalities.">
+<meta name="twitter:title" content="MXmap — Email Providers of Indian Municipalities">
+<meta name="twitter:description" content="Interactive map showing where Indian municipalities host their official email. DNS analysis of municipalities.">
 <meta name="twitter:image" content="https://mxmap.ch/og-image.jpg">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='7' width='28' height='18' rx='2' fill='%231a1a2e'/%3E%3Cpath d='M2 9l14 9 14-9' fill='none' stroke='%2316a34a' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/shared.css">
@@ -54,15 +54,15 @@
 </header>
 <section id="info-bar" aria-label="About this project">
 <script>if(window.innerWidth<=600)document.getElementById('info-bar').classList.add('collapsed');</script>
-  <h2 class="info-title">Email Providers of Swiss Municipalities</h2>
+  <h2 class="info-title">Email Providers of Indian Municipalities</h2>
   <div class="info-grid">
     <div class="info-card">
       <h3>What is this?</h3>
-      <p>A map of all ~2,100 Swiss municipalities showing which provider handles their official email — grouped by jurisdiction — based on public DNS records and other public network signals.</p>
+      <p>A map of Indian municipalities showing which provider handles their official email — grouped by jurisdiction — based on public DNS records and other public network signals.</p>
     </div>
     <div class="info-card">
       <h3>Context</h3>
-      <p>Digital sovereignty: US-based providers are subject to the US CLOUD Act, which allows US authorities to request stored data, regardless of where it is physically hosted. This map makes the current provider landscape visible.</p>
+      <p>Digital sovereignty: US-based providers are subject to the US CLOUD Act, which allows US authorities to request stored data, regardless of where it is physically hosted. India's DPDP Act 2023 emphasizes data localization. This map makes the current provider landscape visible.</p>
     </div>
     <div class="info-card">
       <h3>How does it work?</h3>
@@ -85,37 +85,41 @@
 document.addEventListener('DOMContentLoaded', function () {
 const COLOR_SCHEMES = {
   default: {
-    'us-cloud':    { high: '#ffa199', medium: '#ffccb6', low: '#cccccc' },
-    'swiss-based': { high: '#88faaa', medium: '#daffc2', low: '#cccccc' },
+    'us-cloud':     { high: '#ffa199', medium: '#ffccb6', low: '#cccccc' },
+    'india-based':  { high: '#88faaa', medium: '#daffc2', low: '#cccccc' },
     lake: '#89B3D6',
   },
   colorblind: {
-    'us-cloud':    { high: '#f1be61', medium: '#fde7c4', low: '#cccccc' },
-    'swiss-based': { high: '#6fa2d0', medium: '#C0D8E8', low: '#cccccc' },
+    'us-cloud':     { high: '#f1be61', medium: '#fde7c4', low: '#cccccc' },
+    'india-based':  { high: '#6fa2d0', medium: '#C0D8E8', low: '#cccccc' },
     lake: '#c4afff',
   },
 };
 var CATEGORY_COLORS = COLOR_SCHEMES.default;
 const GRAY = '#BFBFBF';
 
-const CANTON_CODES = {
-  'Kanton Zürich': 'ZH', 'Kanton Bern': 'BE', 'Kanton Luzern': 'LU',
-  'Kanton Uri': 'UR', 'Kanton Schwyz': 'SZ', 'Kanton Obwalden': 'OW',
-  'Kanton Nidwalden': 'NW', 'Kanton Glarus': 'GL', 'Kanton Zug': 'ZG',
-  'Kanton Freiburg': 'FR', 'Kanton Solothurn': 'SO', 'Kanton Basel-Stadt': 'BS',
-  'Kanton Basel-Landschaft': 'BL', 'Kanton Schaffhausen': 'SH',
-  'Kanton Appenzell Ausserrhoden': 'AR', 'Kanton Appenzell Innerrhoden': 'AI',
-  'Kanton St. Gallen': 'SG', 'Kanton Graubünden': 'GR', 'Kanton Aargau': 'AG',
-  'Kanton Thurgau': 'TG', 'Kanton Tessin': 'TI', 'Kanton Waadt': 'VD',
-  'Kanton Wallis': 'VS', 'Kanton Neuenburg': 'NE', 'Kanton Genf': 'GE',
-  'Kanton Jura': 'JU'
+const STATE_CODES = {
+  'Andhra Pradesh': 'AP', 'Arunachal Pradesh': 'AR', 'Assam': 'AS',
+  'Bihar': 'BR', 'Chhattisgarh': 'CG', 'Goa': 'GA',
+  'Gujarat': 'GJ', 'Haryana': 'HR', 'Himachal Pradesh': 'HP',
+  'Jharkhand': 'JH', 'Karnataka': 'KA', 'Kerala': 'KL',
+  'Madhya Pradesh': 'MP', 'Maharashtra': 'MH', 'Manipur': 'MN',
+  'Meghalaya': 'ML', 'Mizoram': 'MZ', 'Nagaland': 'NL',
+  'Odisha': 'OD', 'Punjab': 'PB', 'Rajasthan': 'RJ',
+  'Sikkim': 'SK', 'Tamil Nadu': 'TN', 'Telangana': 'TG',
+  'Tripura': 'TR', 'Uttar Pradesh': 'UP', 'Uttarakhand': 'UK',
+  'West Bengal': 'WB', 'Delhi': 'DL', 'Chandigarh': 'CH',
+  'Jammu and Kashmir': 'JK', 'Ladakh': 'LA', 'Puducherry': 'PY',
+  'Andaman and Nicobar Islands': 'AN', 'Lakshadweep': 'LD',
+  'Dadra and Nagar Haveli and Daman and Diu': 'DD'
 };
+const CANTON_CODES = STATE_CODES;
 const LABELS = {
   microsoft:      'Microsoft 365',
   google:         'Google Workspace',
   aws:            'Amazon Web Services',
-  infomaniak:     'Infomaniak',
-  'swiss-isp':    'Swiss ISP',
+  nic:            'NIC (Gov India)',
+  'indian-isp':   'Indian ISP',
   'independent':  'Self-hosted / Other',
   unknown:        'Unknown'
 };
@@ -149,9 +153,17 @@ function classifyHost(host) {
     return { name: 'Google', category: 'hyperscaler' };
   if (['amazonaws','amazonses','awsdns'].some(k => h.includes(k)))
     return { name: 'AWS', category: 'hyperscaler' };
-  // Swiss (explicit)
-  if (['infomaniak','mxpool.infomaniak'].some(k => h.includes(k)))
-    return { name: 'Infomaniak', category: 'swiss' };
+  // Indian providers (explicit)
+  if (['nic.in','gov.in','nicmail'].some(k => h.includes(k)))
+    return { name: 'NIC India', category: 'indian' };
+  // Known Indian providers
+  const INDIAN_DOMAINS = [
+    'nic.in','gov.in','bsnl.in','airtel.in','jio.com',
+    'tatacommunications.com','sify.com','ctrls.in','yotta.com',
+    'esds.co.in','netmagicsolutions.com','nxtgen.com'
+  ];
+  if (INDIAN_DOMAINS.some(d => h.endsWith(d) || h.endsWith('.' + d)))
+    return { name: h.replace(/^_/, '').split('.').slice(-2).join('.'), category: 'indian' };
   // Foreign senders
   if (['mandrillapp.com','mandrill','mcsv.net'].some(k => h.includes(k)))
     return { name: 'Mailchimp', category: 'foreign' };
@@ -242,22 +254,12 @@ function classifyHost(host) {
     return { name: 'Evalanche', category: 'foreign' };
   if (h.includes('rubicon.eu'))
     return { name: 'Rubicon', category: 'foreign' };
-  // Known Swiss providers with non-.ch TLDs
-  const SWISS_DOMAINS = [
-    'abxsec.com','swiss-egov.cloud','sui-inter.net','ch-dns.net','cyon.net',
-    'seppmail.cloud','swisscom.com','privasphere.com','tinext.com','cloudrexx.com',
-    'mailomat.cloud','comp-sys.net','engadin.cloud','ti-informatique.com',
-    'assolo.net','moresi.com',
-    'naveum.services','spamvor.com','swisscenter.com','seabix.cloud',
-    'swizzonic.email','tinext.net','hosttech.eu','mailpro.com','tizoo.com'
-  ];
-  if (SWISS_DOMAINS.some(d => h.endsWith(d) || h.endsWith('.' + d)))
-    return { name: h.replace(/^_/, '').split('.').slice(-2).join('.'), category: 'swiss' };
+  // Known Swiss providers with non-.ch TLDs — removed for India version
   // TLD-based fallback
   const parts = host.replace(/^_/, '').split('.');
   const name = parts.length >= 2 ? parts.slice(-2).join('.') : host;
-  if (h.endsWith('.ch') || h.endsWith('.swiss'))
-    return { name, category: 'swiss' };
+  if (h.endsWith('.in') || h.endsWith('.gov.in') || h.endsWith('.nic.in'))
+    return { name, category: 'indian' };
   return { name, category: 'unknown' };
 }
 
@@ -399,10 +401,10 @@ async function loadData() {
   showGenerated(dnsData);
 
   // Count by jurisdiction and confidence level
-  const catCounts = { 'us-cloud': 0, 'swiss-based': 0, 'insufficient': 0 };
+  const catCounts = { 'us-cloud': 0, 'india-based': 0, 'insufficient': 0 };
   const levelCounts = {
     'us-cloud': { high: 0, medium: 0, low: 0 },
-    'swiss-based': { high: 0, medium: 0, low: 0 }
+    'india-based': { high: 0, medium: 0, low: 0 }
   };
   for (const bfs of Object.keys(muni)) {
     const m = muni[bfs];
@@ -430,7 +432,7 @@ async function loadData() {
       '<div class="legend-content">' +
       '<strong>Email Jurisdiction</strong>' +
       legendCategoryHtml('US Cloud', CATEGORY_COLORS['us-cloud'], catCounts['us-cloud'], 'us-cloud', levelCounts['us-cloud']) +
-      legendCategoryHtml('Swiss Based', CATEGORY_COLORS['swiss-based'], catCounts['swiss-based'], 'swiss-based', levelCounts['swiss-based']) +
+      legendCategoryHtml('India Based', CATEGORY_COLORS['india-based'], catCounts['india-based'], 'india-based', levelCounts['india-based']) +
       '<div class="legend-group"><i style="background-image:url(\'' + hatchSvg + '\')"></i>Insufficient data (' + catCounts['insufficient'] + ')</div>' +
       '<button class="color-toggle" aria-label="Switch to colorblind-safe colors">\u25D0 Colorblind mode</button>' +
       '</div>';
@@ -444,85 +446,100 @@ async function loadData() {
   // Render lakes
   lakeLayer = addLakes(map, topo, CATEGORY_COLORS.lake);
 
-  // Render municipalities
-  const geojson = topojson.feature(topo, topo.objects.municipalities);
+  // Build state → municipalities mapping
+  const stateData = {};
+  for (const [bfs, m] of Object.entries(muni)) {
+    const state = m.canton || '';
+    if (!stateData[state]) stateData[state] = [];
+    stateData[state].push({ bfs, ...m });
+  }
+
+  // Determine dominant color for a list of municipalities
+  function getDominantColor(munis) {
+    if (!munis || munis.length === 0) return GRAY;
+    const cats = {};
+    for (const m of munis) {
+      const cat = effectiveCategory(m);
+      if (cat) cats[cat] = (cats[cat] || 0) + 1;
+    }
+    if (Object.keys(cats).length === 0) return GRAY;
+    const dominant = Object.entries(cats).sort((a, b) => b[1] - a[1])[0][0];
+    // Use the highest-confidence municipality's level for coloring
+    const best = munis
+      .filter(m => effectiveCategory(m) === dominant)
+      .sort((a, b) => (b.classification_confidence || 0) - (a.classification_confidence || 0))[0];
+    return getColor(best);
+  }
+
+  // Render states with municipality data
+  const statesObj = topo.objects.states || topo.objects.districts || Object.values(topo.objects)[0];
+  const geojson = topojson.feature(topo, statesObj);
 
   muniLayer = L.geoJSON(geojson, {
     style: function (feature) {
-      const bfs = String(feature.id);
-      const m = muni[bfs];
+      const stateName = feature.id || (feature.properties && feature.properties.st_nm) || '';
+      const munis = stateData[stateName] || [];
       return {
-        fillColor: getColor(m),
+        fillColor: getDominantColor(munis),
         weight: 0.6,
         color: '#666',
-        fillOpacity: 1
+        fillOpacity: munis.length > 0 ? 1 : 0.3
       };
     },
     onEachFeature: function (feature, layer) {
-      const bfs = String(feature.id);
-      const m = muni[bfs];
-      if (!m) {
-        layer.bindPopup(`<div class="info-popup"><strong>BFS ${bfs}</strong><br>No data</div>`);
+      const stateName = feature.id || (feature.properties && feature.properties.st_nm) || '';
+      const munis = stateData[stateName] || [];
+      const stateCode = STATE_CODES[stateName] || '';
+      const stateLabel = stateCode ? `${escapeHtml(stateName)} (${stateCode})` : escapeHtml(stateName);
+
+      if (munis.length === 0) {
+        layer.bindPopup(`<div class="info-popup"><strong>${stateLabel}</strong><br>No municipalities tracked</div>`);
         return;
       }
-      const color = getColor(m);
-      const cat = effectiveCategory(m);
-      const level = confidenceLevel(m.classification_confidence || 0);
-      const textColor = '#000';
-      const label = LABELS[m.provider] || m.provider;
 
       const showBody = isMobile ? 'display:none' : '';
 
-      let mxSection = '';
-      if (m.mx && m.mx.length > 0) {
-        mxSection = `<div class="popup-section"><div class="popup-toggle${isMobile ? '' : ' popup-toggle-open'}" onclick="window.toggleSection(this)">Incoming mail handled by <span class="popup-section-hint">(MX)</span></div><div class="popup-section-body" style="${showBody}">${renderTable(m.mx)}</div></div>`;
-      } else {
-        mxSection = `<div class="popup-section"><div class="popup-toggle${isMobile ? '' : ' popup-toggle-open'}" onclick="window.toggleSection(this)">Incoming mail handled by <span class="popup-section-hint">(MX)</span></div><div class="popup-section-body" style="${showBody}"><span class="popup-empty">No MX records found</span></div></div>`;
+      // Build entity list grouped by type for this state
+      const typeOrder = ['State', 'UT', 'District', 'MC'];
+      const typeLabels = { 'State': 'State', 'UT': 'Union Territory', 'District': 'Districts', 'MC': 'Municipal Corporations' };
+      const byType = {};
+      for (const m of munis) {
+        const t = m.type || 'MC';
+        if (!byType[t]) byType[t] = [];
+        byType[t].push(m);
       }
 
-      const spfDelegations = parseSpfDelegations(m.spf);
-      let spfSection = '';
-      if (spfDelegations.length > 0) {
-        spfSection = `<div class="popup-section"><div class="popup-toggle${isMobile ? '' : ' popup-toggle-open'}" onclick="window.toggleSection(this)">Authorized to send mail <span class="popup-section-hint">(SPF)</span></div><div class="popup-section-body" style="${showBody}">${renderTable(spfDelegations)}</div></div>`;
-      } else if (m.spf) {
-        spfSection = `<div class="popup-section"><div class="popup-toggle${isMobile ? '' : ' popup-toggle-open'}" onclick="window.toggleSection(this)">Authorized to send mail <span class="popup-section-hint">(SPF)</span></div><div class="popup-section-body" style="${showBody}"><span class="popup-empty">${escapeHtml(m.spf)}</span></div></div>`;
-      } else {
-        spfSection = `<div class="popup-section"><div class="popup-toggle${isMobile ? '' : ' popup-toggle-open'}" onclick="window.toggleSection(this)">Authorized to send mail <span class="popup-section-hint">(SPF)</span></div><div class="popup-section-body" style="${showBody}"><span class="popup-empty">No SPF record found</span></div></div>`;
+      let muniItems = '';
+      for (const t of typeOrder) {
+        const items = byType[t];
+        if (!items || items.length === 0) continue;
+        muniItems += `<div style="margin:4px 0 2px;font-weight:600;font-size:0.85em;color:#555">${typeLabels[t] || t} (${items.length})</div>`;
+        for (const m of items) {
+          const label = LABELS[m.provider] || m.provider;
+          const color = getColor(m);
+          const conf = Math.round(m.classification_confidence || 0);
+          const badge = `<span class="provider-badge" style="background:${color};color:#000;font-size:0.75em;padding:1px 4px">${escapeHtml(label)}</span>`;
+          muniItems += `<div style="margin:2px 0"><strong>${escapeHtml(m.name)}</strong> &mdash; ${escapeHtml(m.domain || 'unknown')} ${badge} <span style="color:#888;font-size:0.8em">${conf}%</span></div>`;
+        }
       }
 
-      const confidence = m.classification_confidence != null ? m.classification_confidence : 0;
-      const confPct = Math.round(confidence) + '%';
-      let signalsSection = '';
-      if (m.classification_signals && m.classification_signals.length > 0) {
-        const deduped = deduplicateSignals(m.classification_signals);
-        const uniqueCount = deduped.length;
-        const signalItems = deduped.map(s => {
-          const kindLabel = SIGNAL_LABELS[s.kind] || s.kind;
-          const condensed = condenseDetail(s.kind, s.detail);
-          const dup = s.count > 1 ? `<span class="signal-dup">\u00d7${s.count}</span>` : '';
-          return `<div class="signal-item" title="${escapeHtml(s.detail).replace(/"/g, '&quot;')}"><span class="signal-kind">${escapeHtml(kindLabel)}</span><span class="signal-text">${escapeHtml(condensed)}</span>${dup}</div>`;
-        }).join('');
-        signalsSection = `<div class="popup-section"><div class="popup-toggle" onclick="window.toggleSection(this)">Classification signals <span class="popup-signal-count" title="DNS and network evidence used to identify the email provider">${uniqueCount}</span></div><div class="popup-section-body" style="display:none"><div class="signal-list">${signalItems}</div></div></div>`;
-      } else {
-        signalsSection = `<div class="popup-section"><div class="popup-toggle" onclick="window.toggleSection(this)">Classification signals</div><div class="popup-section-body" style="display:none"><span class="popup-empty">No classification signals</span></div></div>`;
+      // Summary counts
+      const provCounts = {};
+      for (const m of munis) {
+        const p = m.provider || 'unknown';
+        provCounts[p] = (provCounts[p] || 0) + 1;
       }
-
-      const eName = escapeHtml(m.name);
-      const cantonCode = CANTON_CODES[m.canton] || '';
-      const nameDisplay = cantonCode ? `${eName} (${cantonCode})` : eName;
-      const eDomain = escapeHtml(m.domain || 'unknown');
-      const eLabel = escapeHtml(label);
-      const badge = `<span class="provider-badge" style="background:${color};color:${textColor}">${eLabel}</span>`;
-      const metaParts = [`Confidence: ${confPct}`];
-      if (m.gateway) metaParts.push(`Gateway: ${escapeHtml(m.gateway)}`);
-      const metaLine = `<div class="popup-meta">${metaParts.join(' &middot; ')}</div>`;
+      const summary = Object.entries(provCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([p, c]) => `${LABELS[p] || p}: ${c}`)
+        .join(', ');
 
       layer.bindPopup(
         `<div class="info-popup">` +
-        `<strong>${nameDisplay}</strong><br>` +
-        `${eDomain} ${badge}` +
-        metaLine +
-        mxSection + spfSection + signalsSection +
+        `<strong>${stateLabel}</strong> &mdash; ${munis.length} entit${munis.length === 1 ? 'y' : 'ies'}<br>` +
+        `<div class="popup-meta">${escapeHtml(summary)}</div>` +
+        `<div class="popup-section"><div class="popup-toggle${isMobile ? '' : ' popup-toggle-open'}" onclick="window.toggleSection(this)">Entities</div>` +
+        `<div class="popup-section-body" style="${showBody}">${muniItems}</div></div>` +
         `</div>`,
         { maxWidth: isMobile ? 300 : 450 }
       );
