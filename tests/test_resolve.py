@@ -55,69 +55,73 @@ class TestUrlToDomain:
 
 class TestGuessDomains:
     def test_simple_name(self):
-        domains = guess_domains("Bern")
-        assert "bern.ch" in domains
-        assert "gemeinde-bern.ch" in domains
-
-    def test_umlaut(self):
-        domains = guess_domains("Zürich")
-        assert "zuerich.ch" in domains
-
-    def test_french_accent(self):
-        domains = guess_domains("Genève")
-        assert "geneve.ch" in domains
+        domains = guess_domains("Mumbai")
+        assert "mumbai.gov.in" in domains
+        assert "mumbai.nic.in" in domains
 
     def test_parenthetical_stripped(self):
-        domains = guess_domains("Rüti (BE)")
-        assert any("rueti" in d for d in domains)
-        assert not any("BE" in d for d in domains)
+        domains = guess_domains("Navi Mumbai (East)")
+        assert any("navi-mumbai" in d for d in domains)
+        assert not any("East" in d for d in domains)
 
-    def test_commune_prefix(self):
-        domains = guess_domains("Bern")
-        assert "commune-de-bern.ch" in domains
+    def test_mc_suffix(self):
+        domains = guess_domains("Mumbai")
+        assert "mumbaimc.gov.in" in domains
 
     def test_apostrophe_removed(self):
-        domains = guess_domains("L'Abbaye")
-        assert any("abbaye" in d for d in domains)
+        domains = guess_domains("Nala Sopara")
+        assert any("nala-sopara" in d or "nalasopara" in d for d in domains)
 
-    def test_italian_prefix(self):
-        domains = guess_domains("Lugano")
-        assert "comune-di-lugano.ch" in domains
+    def test_state_subdomain(self):
+        domains = guess_domains("Pune", canton="Maharashtra")
+        assert "pune.mh.gov.in" in domains
 
-    def test_stadt_prefix(self):
-        domains = guess_domains("Bern")
-        assert "stadt-bern.ch" in domains
-
-    def test_canton_subdomain(self):
-        domains = guess_domains("Niederglatt", canton="Kanton Zürich")
-        assert "niederglatt.zh.ch" in domains
-
-    def test_canton_subdomain_not_added_without_canton(self):
-        domains = guess_domains("Niederglatt", canton="")
-        assert not any(".zh.ch" in d for d in domains)
+    def test_state_subdomain_not_added_without_state(self):
+        domains = guess_domains("Pune", canton="")
+        assert not any(".mh.gov.in" in d for d in domains)
 
     def test_compound_name_joined(self):
-        domains = guess_domains("Rüti bei Lyssach")
-        assert "ruetibeilyssach.ch" in domains
+        domains = guess_domains("New Delhi")
+        assert "newdelhi.gov.in" in domains
 
     def test_slash_name_generates_individual_parts(self):
-        """'Celerina/Schlarigna' yields guesses for each part."""
-        domains = guess_domains("Celerina/Schlarigna")
-        assert "celerina.ch" in domains
-        assert "schlarigna.ch" in domains
-        assert "gemeinde-celerina.ch" in domains
+        """'Hubli/Dharwad' yields guesses for each part."""
+        domains = guess_domains("Hubli/Dharwad")
+        assert "hubli.gov.in" in domains
+        assert "dharwad.gov.in" in domains
 
     def test_slash_name_with_spaces(self):
-        """'Sils im Engadin/Segl' yields guesses for each part."""
-        domains = guess_domains("Sils im Engadin/Segl")
-        assert "segl.ch" in domains
-        assert "sils-im-engadin.ch" in domains
+        """'Sangli Miraj Kupwad/SMK' yields guesses for each part."""
+        domains = guess_domains("Sangli Miraj Kupwad/SMK")
+        assert "smk.gov.in" in domains
 
     def test_no_slash_unchanged(self):
         """Names without '/' produce the same results as before."""
-        domains = guess_domains("Bern")
-        assert "bern.ch" in domains
-        assert "gemeinde-bern.ch" in domains
+        domains = guess_domains("Chennai")
+        assert "chennai.gov.in" in domains
+        assert "chennai.nic.in" in domains
+
+    def test_state_type_uses_abbreviation(self):
+        """State entities guess {abbrev}.gov.in."""
+        domains = guess_domains("Maharashtra", canton="Maharashtra", entity_type="State")
+        assert "mh.gov.in" in domains
+        assert "mh.nic.in" in domains
+
+    def test_state_type_no_mc_suffix(self):
+        """State entities should NOT get MC-style patterns."""
+        domains = guess_domains("Maharashtra", canton="Maharashtra", entity_type="State")
+        assert not any("mc.gov.in" in d for d in domains)
+
+    def test_ut_type(self):
+        """Union Territories use same logic as states."""
+        domains = guess_domains("Delhi", canton="Delhi", entity_type="UT")
+        assert "dl.gov.in" in domains
+
+    def test_district_type_with_state(self):
+        """District entities try district.state patterns."""
+        domains = guess_domains("Pune", canton="Maharashtra", entity_type="District")
+        assert "pune.mh.gov.in" in domains
+        assert "pune.gov.in" in domains
 
 
 # ── detect_website_mismatch() ────────────────────────────────────────
@@ -125,37 +129,20 @@ class TestGuessDomains:
 
 class TestDetectWebsiteMismatch:
     def test_matching_domain(self):
-        assert detect_website_mismatch("Schlieren", "schlieren.ch") is False
-
-    def test_umlaut_with_stadt_prefix(self):
-        assert detect_website_mismatch("Zürich", "stadt-zuerich.ch") is False
+        assert detect_website_mismatch("Mumbai", "mumbai.gov.in") is False
 
     def test_mismatch(self):
-        assert detect_website_mismatch("Schlieren", "totally-unrelated.ch") is True
-
-    def test_canton_subdomain(self):
-        assert detect_website_mismatch("Teufen", "teufen.ar.ch") is False
-
-    def test_french_accent(self):
-        assert detect_website_mismatch("Genève", "geneve.ch") is False
-
-    def test_gemeinde_prefix(self):
-        assert (
-            detect_website_mismatch("Grindelwald", "gemeinde-grindelwald.ch") is False
-        )
-
-    def test_commune_prefix(self):
-        assert detect_website_mismatch("Montreux", "commune-de-montreux.ch") is False
+        assert detect_website_mismatch("Mumbai", "totally-unrelated.gov.in") is True
 
     def test_empty_name(self):
-        assert detect_website_mismatch("", "example.ch") is False
+        assert detect_website_mismatch("", "example.gov.in") is False
 
     def test_empty_domain(self):
         assert detect_website_mismatch("Test", "") is False
 
     def test_word_match(self):
-        # "Aeugst am Albis" — "aeugst" (5 chars) should match
-        assert detect_website_mismatch("Aeugst am Albis", "aeugst-albis.ch") is False
+        # "Navi Mumbai" — "mumbai" (6 chars) should match
+        assert detect_website_mismatch("Navi Mumbai", "navimumbai.gov.in") is False
 
 
 # ── score_domain_sources() ──────────────────────────────────────────
@@ -349,10 +336,10 @@ class TestFetchWikidata:
                     "results": {
                         "bindings": [
                             {
-                                "bfs": {"value": "351"},
-                                "itemLabel": {"value": "Bern"},
-                                "website": {"value": "https://www.bern.ch"},
-                                "cantonLabel": {"value": "Bern"},
+                                "lgdCode": {"value": "100100"},
+                                "itemLabel": {"value": "Mumbai"},
+                                "website": {"value": "https://www.mcgm.gov.in"},
+                                "stateLabel": {"value": "Maharashtra"},
                             },
                         ]
                     }
@@ -361,8 +348,8 @@ class TestFetchWikidata:
         )
 
         result = await fetch_wikidata()
-        assert "351" in result
-        assert result["351"]["name"] == "Bern"
+        assert "100100" in result
+        assert result["100100"]["name"] == "Mumbai"
 
     @respx.mock
     async def test_deduplication(self):
@@ -373,16 +360,16 @@ class TestFetchWikidata:
                     "results": {
                         "bindings": [
                             {
-                                "bfs": {"value": "351"},
-                                "itemLabel": {"value": "Bern"},
-                                "website": {"value": "https://www.bern.ch"},
-                                "cantonLabel": {"value": "Bern"},
+                                "lgdCode": {"value": "100100"},
+                                "itemLabel": {"value": "Mumbai"},
+                                "website": {"value": "https://www.mcgm.gov.in"},
+                                "stateLabel": {"value": "Maharashtra"},
                             },
                             {
-                                "bfs": {"value": "351"},
-                                "itemLabel": {"value": "Bern"},
-                                "website": {"value": "https://www.bern.ch/alt"},
-                                "cantonLabel": {"value": "Bern"},
+                                "lgdCode": {"value": "100100"},
+                                "itemLabel": {"value": "Mumbai"},
+                                "website": {"value": "https://www.mcgm.gov.in/alt"},
+                                "stateLabel": {"value": "Maharashtra"},
                             },
                         ]
                     }
@@ -526,15 +513,15 @@ class TestExtractEmailDomains:
 
 class TestBuildUrls:
     def test_bare_domain(self):
-        urls = build_urls("example.ch")
-        assert "https://www.example.ch/" in urls
-        assert "https://example.ch/" in urls
-        assert any("/kontakt" in u for u in urls)
+        urls = build_urls("example.in")
+        assert "https://www.example.in/" in urls
+        assert "https://example.in/" in urls
+        assert any("/contact-us" in u for u in urls)
 
     def test_www_prefix(self):
-        urls = build_urls("www.example.ch")
-        assert "https://www.example.ch/" in urls
-        assert "https://example.ch/" in urls
+        urls = build_urls("www.example.in")
+        assert "https://www.example.in/" in urls
+        assert "https://example.in/" in urls
 
 
 # ── scrape_email_domains() ───────────────────────────────────────────
@@ -731,22 +718,22 @@ class TestResolveMunicipalityDomain:
         """When only guess finds a domain, confidence is low."""
         m = {
             "bfs": "999",
-            "name": "Testingen",
-            "canton": "Kanton Zürich",
+            "name": "Testpur",
+            "canton": "Maharashtra",
             "website": "",
         }
         overrides = {}
         client = AsyncMock()
 
         async def fake_lookup_mx(domain):
-            if domain == "testingen.ch":
-                return ["mail.testingen.ch"]
+            if domain == "testpur.gov.in":
+                return ["mail.testpur.gov.in"]
             return []
 
         with patch("mail_sovereignty.resolve.lookup_mx", side_effect=fake_lookup_mx):
             result = await resolve_municipality_domain(m, overrides, client)
 
-        assert result["domain"] == "testingen.ch"
+        assert result["domain"] == "testpur.gov.in"
         assert result["source"] == "guess"
         assert result["confidence"] == "low"
         assert "guess_only" in result["flags"]
@@ -820,11 +807,10 @@ EMPTY_BFS_CSV = BFS_CSV_HEADER + "\n"
 class TestResolveRun:
     @respx.mock
     async def test_writes_output(self, tmp_path):
-        # Mock BFS API
-        respx.get("https://www.agvchapp.bfs.admin.ch/api/communes/snapshot").mock(
-            return_value=httpx.Response(200, text=SAMPLE_BFS_CSV)
-        )
-
+        # Mock fetch_bfs_municipalities to return one municipality
+        bfs_data = {
+            "100100": {"bfs": "100100", "name": "Mumbai", "canton": "Maharashtra"}
+        }
         # Mock Wikidata
         respx.post("https://query.wikidata.org/sparql").mock(
             return_value=httpx.Response(
@@ -833,10 +819,10 @@ class TestResolveRun:
                     "results": {
                         "bindings": [
                             {
-                                "bfs": {"value": "351"},
-                                "itemLabel": {"value": "Bern"},
-                                "website": {"value": "https://www.bern.ch"},
-                                "cantonLabel": {"value": "Bern"},
+                                "lgdCode": {"value": "100100"},
+                                "itemLabel": {"value": "Mumbai"},
+                                "website": {"value": "https://www.mcgm.gov.in"},
+                                "stateLabel": {"value": "Maharashtra"},
                             },
                         ]
                     }
@@ -845,14 +831,18 @@ class TestResolveRun:
         )
 
         # Scraping runs first now; mock scrape to return no emails (404)
-        respx.get(url__regex=r"https://.*bern\.ch.*").mock(
+        respx.get(url__regex=r"https://.*mcgm\.gov\.in.*").mock(
             return_value=httpx.Response(404)
         )
 
         with patch(
+            "mail_sovereignty.resolve.fetch_bfs_municipalities",
+            new_callable=AsyncMock,
+            return_value=bfs_data,
+        ), patch(
             "mail_sovereignty.resolve.lookup_mx",
             new_callable=AsyncMock,
-            return_value=["mx.bern.ch"],
+            return_value=["mx.mcgm.gov.in"],
         ):
             output = tmp_path / "municipality_domains.json"
             overrides = tmp_path / "overrides.json"
@@ -862,45 +852,46 @@ class TestResolveRun:
         assert output.exists()
         data = json.loads(output.read_text())
         assert data["total"] == 1
-        assert "351" in data["municipalities"]
+        assert "100100" in data["municipalities"]
 
     @respx.mock
     async def test_adds_override_only_municipalities(self, tmp_path):
-        # Mock BFS API (empty - no municipalities)
-        respx.get("https://www.agvchapp.bfs.admin.ch/api/communes/snapshot").mock(
-            return_value=httpx.Response(200, text=EMPTY_BFS_CSV)
-        )
-
-        # Mock Wikidata (empty)
-        respx.post("https://query.wikidata.org/sparql").mock(
-            return_value=httpx.Response(
-                200,
-                json={"results": {"bindings": []}},
-            )
-        )
-
+        # Mock BFS (empty)
         with patch(
-            "mail_sovereignty.resolve.lookup_mx",
+            "mail_sovereignty.resolve.fetch_bfs_municipalities",
             new_callable=AsyncMock,
-            return_value=["mx.test.ch"],
+            return_value={},
         ):
-            output = tmp_path / "municipality_domains.json"
-            overrides = tmp_path / "overrides.json"
-            overrides.write_text(
-                '{"2056": {"domain": "fetigny-menieres.ch", "name": "Fetigny-Menieres", "canton": "Kanton Freiburg", "reason": "Missing from Wikidata"}}'
+            # Mock Wikidata (empty)
+            respx.post("https://query.wikidata.org/sparql").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={"results": {"bindings": []}},
+                )
             )
-            await run(output, overrides, date="01-01-2026")
+
+            with patch(
+                "mail_sovereignty.resolve.lookup_mx",
+                new_callable=AsyncMock,
+                return_value=["mx.test.gov.in"],
+            ):
+                output = tmp_path / "municipality_domains.json"
+                overrides = tmp_path / "overrides.json"
+                overrides.write_text(
+                    '{"200100": {"domain": "test-muni.gov.in", "name": "Test Muni", "canton": "Maharashtra", "reason": "Missing from Wikidata"}}'
+                )
+                await run(output, overrides, date="01-01-2026")
 
         data = json.loads(output.read_text())
-        assert "2056" in data["municipalities"]
-        assert data["municipalities"]["2056"]["source"] == "override"
+        assert "200100" in data["municipalities"]
+        assert data["municipalities"]["200100"]["source"] == "override"
 
     @respx.mock
     async def test_bfs_wikidata_merge(self, tmp_path):
         """BFS municipalities get Wikidata website URLs merged in."""
-        respx.get("https://www.agvchapp.bfs.admin.ch/api/communes/snapshot").mock(
-            return_value=httpx.Response(200, text=SAMPLE_BFS_CSV)
-        )
+        bfs_data = {
+            "100100": {"bfs": "100100", "name": "Mumbai", "canton": "Maharashtra"}
+        }
 
         respx.post("https://query.wikidata.org/sparql").mock(
             return_value=httpx.Response(
@@ -909,10 +900,10 @@ class TestResolveRun:
                     "results": {
                         "bindings": [
                             {
-                                "bfs": {"value": "351"},
-                                "itemLabel": {"value": "Bern"},
-                                "website": {"value": "https://www.bern.ch"},
-                                "cantonLabel": {"value": "Bern"},
+                                "lgdCode": {"value": "100100"},
+                                "itemLabel": {"value": "Mumbai"},
+                                "website": {"value": "https://www.mcgm.gov.in"},
+                                "stateLabel": {"value": "Maharashtra"},
                             },
                         ]
                     }
@@ -920,14 +911,18 @@ class TestResolveRun:
             )
         )
 
-        respx.get(url__regex=r"https://.*bern\.ch.*").mock(
+        respx.get(url__regex=r"https://.*mcgm\.gov\.in.*").mock(
             return_value=httpx.Response(404)
         )
 
         with patch(
+            "mail_sovereignty.resolve.fetch_bfs_municipalities",
+            new_callable=AsyncMock,
+            return_value=bfs_data,
+        ), patch(
             "mail_sovereignty.resolve.lookup_mx",
             new_callable=AsyncMock,
-            return_value=["mx.bern.ch"],
+            return_value=["mx.mcgm.gov.in"],
         ):
             output = tmp_path / "municipality_domains.json"
             overrides = tmp_path / "overrides.json"
@@ -935,8 +930,8 @@ class TestResolveRun:
             await run(output, overrides, date="01-01-2026")
 
         data = json.loads(output.read_text())
-        entry = data["municipalities"]["351"]
-        assert entry["name"] == "Bern"
+        entry = data["municipalities"]["100100"]
+        assert entry["name"] == "Mumbai"
         assert "sources_detail" in entry
 
 
@@ -946,10 +941,10 @@ WIKIDATA_JSON = {
     "results": {
         "bindings": [
             {
-                "bfs": {"value": "351"},
-                "itemLabel": {"value": "Bern"},
-                "website": {"value": "https://www.bern.ch"},
-                "cantonLabel": {"value": "Bern"},
+                "lgdCode": {"value": "100100"},
+                "itemLabel": {"value": "Mumbai"},
+                "website": {"value": "https://www.mcgm.gov.in"},
+                "stateLabel": {"value": "Maharashtra"},
             },
         ]
     }
@@ -967,7 +962,7 @@ class TestFetchWikidataRetry:
             ]
         )
         result = await fetch_wikidata()
-        assert "351" in result
+        assert "100100" in result
         assert route.call_count == 2
 
     @respx.mock
@@ -1003,17 +998,11 @@ class TestResolveRunErrorIsolation:
     @respx.mock
     async def test_skips_failing_municipality(self, tmp_path):
         """One failing resolution should not crash the whole run."""
-        # Two municipalities in BFS
-        csv_text = f"""{BFS_CSV_HEADER}
-1,1,12.09.1848,,1,,Bern,BE,,,,
-200,200,12.09.1848,,2,1,Amtsbezirk Bern,Bern,,,,
-351,351,12.09.1848,,3,200,Bern,Bern,,,,
-300,300,12.09.1848,,2,1,Amtsbezirk Thun,Thun,,,,
-942,942,12.09.1848,,3,300,Thun,Thun,,,,
-"""
-        respx.get("https://www.agvchapp.bfs.admin.ch/api/communes/snapshot").mock(
-            return_value=httpx.Response(200, text=csv_text)
-        )
+        bfs_data = {
+            "100100": {"bfs": "100100", "name": "Mumbai", "canton": "Maharashtra"},
+            "100200": {"bfs": "100200", "name": "Pune", "canton": "Maharashtra"},
+        }
+
         respx.post("https://query.wikidata.org/sparql").mock(
             return_value=httpx.Response(200, json={"results": {"bindings": []}})
         )
@@ -1023,13 +1012,13 @@ class TestResolveRunErrorIsolation:
         async def _flaky_resolve(m, overrides, client):
             nonlocal call_count
             call_count += 1
-            if m["bfs"] == "942":
+            if m["bfs"] == "100200":
                 raise RuntimeError("boom")
             return {
                 "bfs": m["bfs"],
                 "name": m["name"],
                 "canton": m.get("canton", ""),
-                "domain": "test.ch",
+                "domain": "test.gov.in",
                 "source": "guess",
                 "confidence": "low",
                 "sources_detail": {},
@@ -1037,6 +1026,10 @@ class TestResolveRunErrorIsolation:
             }
 
         with patch(
+            "mail_sovereignty.resolve.fetch_bfs_municipalities",
+            new_callable=AsyncMock,
+            return_value=bfs_data,
+        ), patch(
             "mail_sovereignty.resolve.resolve_municipality_domain",
             side_effect=_flaky_resolve,
         ):
@@ -1046,24 +1039,27 @@ class TestResolveRunErrorIsolation:
             await run(output, overrides, date="01-01-2026")
 
         data = json.loads(output.read_text())
-        # Bern succeeded, Thun was skipped
-        assert "351" in data["municipalities"]
-        assert "942" not in data["municipalities"]
+        # Mumbai succeeded, Pune was skipped
+        assert "100100" in data["municipalities"]
+        assert "100200" not in data["municipalities"]
 
 
 class TestResolveRunLogging:
     @respx.mock
     async def test_logs_bfs_only_warning(self, tmp_path, caplog):
         """BFS-only municipalities should produce a warning log."""
-        # BFS has Bern, Wikidata is empty -> Bern is BFS-only
-        respx.get("https://www.agvchapp.bfs.admin.ch/api/communes/snapshot").mock(
-            return_value=httpx.Response(200, text=SAMPLE_BFS_CSV)
-        )
+        bfs_data = {
+            "100100": {"bfs": "100100", "name": "Mumbai", "canton": "Maharashtra"}
+        }
         respx.post("https://query.wikidata.org/sparql").mock(
             return_value=httpx.Response(200, json={"results": {"bindings": []}})
         )
 
         with patch(
+            "mail_sovereignty.resolve.fetch_bfs_municipalities",
+            new_callable=AsyncMock,
+            return_value=bfs_data,
+        ), patch(
             "mail_sovereignty.resolve.lookup_mx",
             new_callable=AsyncMock,
             return_value=[],

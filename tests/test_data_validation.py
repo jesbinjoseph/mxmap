@@ -75,7 +75,7 @@ class TestMunicipalityDomainsStructure:
 
     def test_municipality_count_plausible(self, municipality_domains_data):
         count = len(municipality_domains_data["municipalities"])
-        assert 2000 <= count <= 2300, f"unexpected count: {count}"
+        assert 50 <= count <= 500, f"unexpected count: {count}"
 
 
 # ── municipality_domains.json entries ─────────────────────────────────
@@ -158,7 +158,7 @@ class TestDataJsonStructure:
 
     def test_municipality_count_plausible(self, data_json_data):
         count = len(data_json_data["municipalities"])
-        assert 2000 <= count <= 2300, f"unexpected count: {count}"
+        assert 50 <= count <= 500, f"unexpected count: {count}"
 
     def test_counts_sum_to_total(self, data_json_data):
         total = data_json_data["total"]

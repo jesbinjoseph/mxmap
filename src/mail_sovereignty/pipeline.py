@@ -22,9 +22,9 @@ _CATEGORY_MAP: dict[str, str] = {
     "microsoft": "us-cloud",
     "google": "us-cloud",
     "aws": "us-cloud",
-    "infomaniak": "swiss-based",
-    "swiss-isp": "swiss-based",
-    "independent": "swiss-based",
+    "nic": "india-based",
+    "indian-isp": "india-based",
+    "independent": "india-based",
 }
 
 
@@ -32,6 +32,7 @@ _FRONTEND_FIELDS = {
     "name",
     "domain",
     "canton",
+    "type",
     "mx",
     "spf",
     "provider",
@@ -74,6 +75,7 @@ def _serialize_result(
         "bfs": entry["bfs"],
         "name": entry["name"],
         "canton": entry.get("canton", ""),
+        "type": entry.get("type", "MC"),
         "domain": entry.get("domain", ""),
         "mx": result.mx_hosts,
         "spf": result.spf_raw,
@@ -136,6 +138,7 @@ async def run(domains_path: Path, output_path: Path) -> None:
             "bfs": entry["bfs"],
             "name": entry["name"],
             "canton": entry.get("canton", ""),
+            "type": entry.get("type", "MC"),
             "domain": "",
             "mx": [],
             "spf": "",
@@ -190,10 +193,10 @@ async def run(domains_path: Path, output_path: Path) -> None:
         counts.get("aws", 0),
     )
     logger.info(
-        "  Swiss Based      {:>5}  (Infomaniak={} ISP={} Indep={})",
-        cat_counts.get("swiss-based", 0),
-        counts.get("infomaniak", 0),
-        counts.get("swiss-isp", 0),
+        "  India Based      {:>5}  (NIC={} ISP={} Indep={})",
+        cat_counts.get("india-based", 0),
+        counts.get("nic", 0),
+        counts.get("indian-isp", 0),
         counts.get("independent", 0),
     )
     logger.info("  Unknown/No MX    {:>5}", cat_counts.get("unknown", 0))

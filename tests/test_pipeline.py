@@ -54,7 +54,7 @@ class TestSerializeResult:
             mx_hosts=["example.mail.protection.outlook.com"],
             spf_raw="v=spf1 include:spf.protection.outlook.com -all",
         )
-        entry = {"bfs": "351", "name": "Bern", "canton": "Bern", "domain": "bern.ch"}
+        entry = {"bfs": "351", "name": "Bern", "canton": "Bern", "type": "MC", "domain": "bern.ch"}
         out = _serialize_result(entry, result)
 
         assert out["bfs"] == "351"

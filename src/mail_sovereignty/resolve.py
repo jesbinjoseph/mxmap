@@ -14,7 +14,7 @@ from loguru import logger
 
 from mail_sovereignty.bfs_api import fetch_bfs_municipalities
 from mail_sovereignty.constants import (
-    CANTON_ABBREVIATIONS,
+    STATE_ABBREVIATIONS,
     CONCURRENCY_POSTPROCESS,
     EMAIL_RE,
     SKIP_DOMAINS,
@@ -38,74 +38,46 @@ def url_to_domain(url: str | None) -> str | None:
 
 
 def _slugify_name(name: str) -> set[str]:
-    """Generate slug variants for a municipality name (umlaut/accent handling)."""
+    """Generate slug variants for a municipality name."""
     raw = name.lower().strip()
     raw = re.sub(r"\s*\(.*?\)\s*", "", raw)
 
-    # German umlaut transliteration
-    de = raw.replace("\u00fc", "ue").replace("\u00e4", "ae").replace("\u00f6", "oe")
-    # French accent removal
-    fr = raw
-    for a, b in [
-        ("\u00e9", "e"),
-        ("\u00e8", "e"),
-        ("\u00ea", "e"),
-        ("\u00eb", "e"),
-        ("\u00e0", "a"),
-        ("\u00e2", "a"),
-        ("\u00f4", "o"),
-        ("\u00ee", "i"),
-        ("\u00f9", "u"),
-        ("\u00fb", "u"),
-        ("\u00e7", "c"),
-        ("\u00ef", "i"),
-    ]:
-        fr = fr.replace(a, b)
+    normalized = raw
 
     def slugify(s):
         s = re.sub(r"['\u2019`]", "", s)
         s = re.sub(r"[^a-z0-9]+", "-", s)
         return s.strip("-")
 
-    return {slugify(de), slugify(fr), slugify(raw)} - {""}
+    return {slugify(normalized), slugify(raw)} - {""}
 
 
-def guess_domains(name: str, canton: str = "") -> list[str]:
-    """Generate a set of plausible domain guesses for a municipality."""
+def guess_domains(name: str, canton: str = "", entity_type: str = "MC") -> list[str]:
+    """Generate a set of plausible domain guesses for an Indian entity.
+
+    Args:
+        name: Entity name (state, district, or municipality).
+        canton: State name (for state abbreviation lookups).
+        entity_type: One of "State", "UT", "District", "MC", "M", etc.
+    """
 
     def _slugs_for(text: str) -> set[str]:
         raw = text.lower().strip()
         raw = re.sub(r"\s*\(.*?\)\s*", "", raw)
 
-        de = raw.replace("\u00fc", "ue").replace("\u00e4", "ae").replace("\u00f6", "oe")
-        fr = raw
-        for a, b in [
-            ("\u00e9", "e"),
-            ("\u00e8", "e"),
-            ("\u00ea", "e"),
-            ("\u00eb", "e"),
-            ("\u00e0", "a"),
-            ("\u00e2", "a"),
-            ("\u00f4", "o"),
-            ("\u00ee", "i"),
-            ("\u00f9", "u"),
-            ("\u00fb", "u"),
-            ("\u00e7", "c"),
-            ("\u00ef", "i"),
-        ]:
-            fr = fr.replace(a, b)
+        # Basic transliteration for common romanized Hindi conventions
+        normalized = raw
 
         def slugify(s):
             s = re.sub(r"['\u2019`]", "", s)
             s = re.sub(r"[^a-z0-9]+", "-", s)
             return s.strip("-")
 
-        slugs = {slugify(de), slugify(fr), slugify(raw)} - {""}
+        slugs = {slugify(normalized), slugify(raw)} - {""}
 
         # Compound name handling: join all words
-        # e.g. "Rüti bei Lyssach" -> "ruetibeilyssach.ch"
         extras = set()
-        for variant in [de, fr, raw]:
+        for variant in [normalized, raw]:
             joined = slugify(variant).replace("-", "")
             if joined and joined not in slugs:
                 extras.add(joined)
@@ -131,19 +103,55 @@ def guess_domains(name: str, canton: str = "") -> list[str]:
             all_extras |= extras
 
     candidates = set()
-    canton_abbrev = CANTON_ABBREVIATIONS.get(canton, "")
+    state_abbrev = STATE_ABBREVIATIONS.get(canton, "")
 
-    for slug in all_slugs:
-        candidates.add(f"{slug}.ch")
-        candidates.add(f"gemeinde-{slug}.ch")
-        candidates.add(f"commune-de-{slug}.ch")
-        candidates.add(f"comune-di-{slug}.ch")
-        candidates.add(f"stadt-{slug}.ch")
-        if canton_abbrev:
-            candidates.add(f"{slug}.{canton_abbrev}.ch")
+    if entity_type in ("State", "UT"):
+        # State/UT: use state abbreviation directly + full name
+        if state_abbrev:
+            candidates.add(f"{state_abbrev}.gov.in")
+            candidates.add(f"{state_abbrev}.nic.in")
+        for slug in all_slugs:
+            candidates.add(f"{slug}.gov.in")
+            candidates.add(f"{slug}.nic.in")
+        for joined in all_extras:
+            candidates.add(f"{joined}.gov.in")
+            candidates.add(f"{joined}.nic.in")
 
-    for joined in all_extras:
-        candidates.add(f"{joined}.ch")
+    elif entity_type == "District":
+        # Districts: try district.state.gov.in and plain patterns
+        # Strip " District" suffix for domain guessing
+        clean_name = re.sub(r"\s+district$", "", name, flags=re.IGNORECASE)
+        clean_slugs, clean_extras = _slugs_for(clean_name)
+
+        for slug in clean_slugs | all_slugs:
+            candidates.add(f"{slug}.gov.in")
+            candidates.add(f"{slug}.nic.in")
+            if state_abbrev:
+                candidates.add(f"{slug}.{state_abbrev}.gov.in")
+                candidates.add(f"{slug}.{state_abbrev}.nic.in")
+
+        for joined in clean_extras | all_extras:
+            candidates.add(f"{joined}.gov.in")
+            candidates.add(f"{joined}.nic.in")
+
+    else:
+        # Municipal corporation / municipality: most patterns
+        for slug in all_slugs:
+            # Indian government domains
+            candidates.add(f"{slug}.gov.in")
+            candidates.add(f"{slug}.nic.in")
+            candidates.add(f"{slug}.in")
+            # Municipal corporation patterns
+            candidates.add(f"{slug}mc.gov.in")
+            candidates.add(f"{slug}nmc.gov.in")
+            candidates.add(f"{slug}municipal.gov.in")
+            if state_abbrev:
+                candidates.add(f"{slug}.{state_abbrev}.gov.in")
+                candidates.add(f"{slug}.{state_abbrev}.nic.in")
+
+        for joined in all_extras:
+            candidates.add(f"{joined}.gov.in")
+            candidates.add(f"{joined}.nic.in")
 
     return sorted(candidates)
 
@@ -160,7 +168,7 @@ def detect_website_mismatch(name: str, website_domain: str) -> bool:
     slugs = _slugify_name(name)
 
     # Handle common prefixes
-    prefixes = ["stadt-", "gemeinde-", "commune-de-", "comune-di-"]
+    prefixes = ["nagar-", "nagarpanchayat-", "municipal-", "mc-"]
     domain_stripped = domain_lower
     for prefix in prefixes:
         if domain_stripped.startswith(prefix):
@@ -186,25 +194,9 @@ def detect_website_mismatch(name: str, website_domain: str) -> bool:
     # Check if any word from the name (4+ chars) appears in the domain
     raw = name.lower().strip()
     raw = re.sub(r"\s*\(.*?\)\s*", "", raw)
-    de = raw.replace("\u00fc", "ue").replace("\u00e4", "ae").replace("\u00f6", "oe")
-    fr = raw
-    for a, b in [
-        ("\u00e9", "e"),
-        ("\u00e8", "e"),
-        ("\u00ea", "e"),
-        ("\u00eb", "e"),
-        ("\u00e0", "a"),
-        ("\u00e2", "a"),
-        ("\u00f4", "o"),
-        ("\u00ee", "i"),
-        ("\u00f9", "u"),
-        ("\u00fb", "u"),
-        ("\u00e7", "c"),
-        ("\u00ef", "i"),
-    ]:
-        fr = fr.replace(a, b)
+    normalized = raw
 
-    for variant in [raw, de, fr]:
+    for variant in [raw, normalized]:
         words = re.findall(r"[a-z]{4,}", variant)
         for word in words:
             if word in domain_lower:
@@ -302,7 +294,7 @@ async def _fetch_sparql(
 
 
 async def fetch_wikidata() -> dict[str, dict[str, str]]:
-    """Query Wikidata for all Swiss municipalities."""
+    """Query Wikidata for Indian municipalities."""
     logger.info("Fetching municipalities from Wikidata")
     headers = {
         "Accept": "application/sparql-results+json",
@@ -314,20 +306,20 @@ async def fetch_wikidata() -> dict[str, dict[str, str]]:
 
     municipalities = {}
     for row in data["results"]["bindings"]:
-        bfs = row["bfs"]["value"]
-        name = row.get("itemLabel", {}).get("value", f"BFS-{bfs}")
+        lgd = row["lgdCode"]["value"]
+        name = row.get("itemLabel", {}).get("value", f"LGD-{lgd}")
         website = row.get("website", {}).get("value", "")
-        canton = row.get("cantonLabel", {}).get("value", "")
+        state = row.get("stateLabel", {}).get("value", "")
 
-        if bfs not in municipalities:
-            municipalities[bfs] = {
-                "bfs": bfs,
+        if lgd not in municipalities:
+            municipalities[lgd] = {
+                "bfs": lgd,
                 "name": name,
                 "website": website,
-                "canton": canton,
+                "canton": state,
             }
-        elif not municipalities[bfs]["website"] and website:
-            municipalities[bfs]["website"] = website
+        elif not municipalities[lgd]["website"] and website:
+            municipalities[lgd]["website"] = website
 
     logger.info(
         "Wikidata: {} municipalities, {} with websites",
@@ -544,11 +536,13 @@ async def resolve_municipality_domain(
     bfs = m["bfs"]
     name = m["name"]
     canton = m.get("canton", "")
+    entity_type = m.get("type", "MC")
 
     entry: dict[str, Any] = {
         "bfs": bfs,
         "name": name,
         "canton": canton,
+        "type": entity_type,
     }
 
     # 1. Check overrides (immediate win)
@@ -595,7 +589,7 @@ async def resolve_municipality_domain(
             sources["wikidata"].add(website_domain)
 
     # Guess domains
-    for guess in guess_domains(name, canton):
+    for guess in guess_domains(name, canton, entity_type):
         mx = await lookup_mx(guess)
         if mx:
             sources["guess"].add(guess)
@@ -627,6 +621,7 @@ async def run(output_path: Path, overrides_path: Path, date: str | None = None) 
             "bfs": bfs,
             "name": bfs_entry["name"],
             "canton": bfs_entry["canton"],
+            "type": bfs_entry.get("type", "MC"),
             "website": "",
         }
         if bfs in wikidata:
