@@ -58,6 +58,8 @@ uv sync
 
 # Stage 1: resolve municipality domains
 uv run resolve-domains
+# iGOD district enrichment is enabled by default; disable if needed
+uv run resolve-domains --no-include-igod-districts
 
 # Stage 2: classify email providers
 uv run classify-providers

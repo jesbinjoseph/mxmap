@@ -10,6 +10,19 @@ def resolve_domains() -> None:
 
     parser = argparse.ArgumentParser(description="Resolve municipality email domains")
     parser.add_argument("--date", help="BFS snapshot date (DD-MM-YYYY)", default=None)
+    parser.set_defaults(include_igod_districts=True)
+    parser.add_argument(
+        "--include-igod-districts",
+        dest="include_igod_districts",
+        action="store_true",
+        help="Include districts scraped from https://igod.gov.in/sg/states (default)",
+    )
+    parser.add_argument(
+        "--no-include-igod-districts",
+        dest="include_igod_districts",
+        action="store_false",
+        help="Disable iGOD district enrichment",
+    )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable debug logging"
     )
@@ -18,7 +31,12 @@ def resolve_domains() -> None:
     setup_logging(args.verbose)
 
     asyncio.run(
-        run(Path("municipality_domains.json"), Path("overrides.json"), date=args.date)
+        run(
+            Path("municipality_domains.json"),
+            Path("overrides.json"),
+            date=args.date,
+            include_igod_districts=args.include_igod_districts,
+        )
     )
 
 

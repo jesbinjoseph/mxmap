@@ -32,6 +32,7 @@ class TestCli:
                 Path("municipality_domains.json"),
                 Path("overrides.json"),
                 date=None,
+                include_igod_districts=True,
             )
 
     def test_resolve_domains_with_date(self):
@@ -44,6 +45,33 @@ class TestCli:
                 Path("municipality_domains.json"),
                 Path("overrides.json"),
                 date="15-03-2026",
+                include_igod_districts=True,
+            )
+
+    def test_resolve_domains_with_igod_districts(self):
+        with (
+            patch("mail_sovereignty.resolve.run", new_callable=AsyncMock) as mock_run,
+            patch("sys.argv", ["resolve-domains", "--include-igod-districts"]),
+        ):
+            resolve_domains()
+            mock_run.assert_called_once_with(
+                Path("municipality_domains.json"),
+                Path("overrides.json"),
+                date=None,
+                include_igod_districts=True,
+            )
+
+    def test_resolve_domains_without_igod_districts(self):
+        with (
+            patch("mail_sovereignty.resolve.run", new_callable=AsyncMock) as mock_run,
+            patch("sys.argv", ["resolve-domains", "--no-include-igod-districts"]),
+        ):
+            resolve_domains()
+            mock_run.assert_called_once_with(
+                Path("municipality_domains.json"),
+                Path("overrides.json"),
+                date=None,
+                include_igod_districts=False,
             )
 
     def test_resolve_domains_verbose(self):

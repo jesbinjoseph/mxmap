@@ -605,11 +605,19 @@ async def resolve_municipality_domain(
     return entry
 
 
-async def run(output_path: Path, overrides_path: Path, date: str | None = None) -> None:
+async def run(
+    output_path: Path,
+    overrides_path: Path,
+    date: str | None = None,
+    include_igod_districts: bool = True,
+) -> None:
     overrides = load_overrides(overrides_path)
 
     # BFS API is the canonical municipality list
-    bfs_municipalities = await fetch_bfs_municipalities(date)
+    bfs_municipalities = await fetch_bfs_municipalities(
+        date,
+        include_igod_districts=include_igod_districts,
+    )
 
     # Wikidata provides website URLs
     wikidata = await fetch_wikidata()
