@@ -123,6 +123,39 @@ const LABELS = {
   'independent':  'Self-hosted / Other',
   unknown:        'Unknown'
 };
+const DMARC_COLORS = {
+  green:   '#2e7d32',
+  amber:   '#ed6c02',
+  red:     '#c62828',
+  missing: '#9e9e9e'
+};
+const DMARC_LABELS = {
+  green:   'Enforced (p=reject)',
+  amber:   'Partial (quarantine / pct<100)',
+  red:     'Monitor only (p=none / malformed)',
+  missing: 'No DMARC record'
+};
+function dmarcTier(m) {
+  return (m && m.dmarc && m.dmarc.tier) || 'missing';
+}
+
+const HOSTING_COLORS = {
+  'india-govt':     '#1b5e20',
+  'india-private':  '#558b2f',
+  'foreign-cloud':  '#c62828',
+  'foreign-other':  '#ed6c02',
+  'unknown':        '#9e9e9e'
+};
+const HOSTING_LABELS = {
+  'india-govt':    'Indian Gov / NIC',
+  'india-private': 'Indian ISP / DC',
+  'foreign-cloud': 'Foreign hyperscaler',
+  'foreign-other': 'Foreign other',
+  'unknown':       'No MX / unknown ASN'
+};
+function hostingTier(m) {
+  return (m && m.hosting && m.hosting.tier) || 'unknown';
+}
 
 function effectiveCategory(m) {
   if (!m || !m.category || m.category === 'unknown') return null;
@@ -406,6 +439,8 @@ async function loadData() {
     'us-cloud': { high: 0, medium: 0, low: 0 },
     'india-based': { high: 0, medium: 0, low: 0 }
   };
+  const dmarcCounts = { green: 0, amber: 0, red: 0, missing: 0 };
+  const hostingCounts = { 'india-govt': 0, 'india-private': 0, 'foreign-cloud': 0, 'foreign-other': 0, 'unknown': 0 };
   for (const bfs of Object.keys(muni)) {
     const m = muni[bfs];
     const cat = effectiveCategory(m);
@@ -416,6 +451,8 @@ async function loadData() {
     } else {
       catCounts['insufficient']++;
     }
+    dmarcCounts[dmarcTier(m)]++;
+    hostingCounts[hostingTier(m)]++;
   }
 
   const hatchSvg = 'data:image/svg+xml,' +
@@ -434,6 +471,21 @@ async function loadData() {
       legendCategoryHtml('US Cloud', CATEGORY_COLORS['us-cloud'], catCounts['us-cloud'], 'us-cloud', levelCounts['us-cloud']) +
       legendCategoryHtml('India Based', CATEGORY_COLORS['india-based'], catCounts['india-based'], 'india-based', levelCounts['india-based']) +
       '<div class="legend-group"><i style="background-image:url(\'' + hatchSvg + '\')"></i>Insufficient data (' + catCounts['insufficient'] + ')</div>' +
+      '<div class="legend-group">' +
+      '<span class="legend-group-label">DMARC Posture</span>' +
+      '<i class="legend-swatch" style="background:' + DMARC_COLORS.green   + '"></i>' + DMARC_LABELS.green   + ' (' + dmarcCounts.green   + ')<br>' +
+      '<i class="legend-swatch" style="background:' + DMARC_COLORS.amber   + '"></i>' + DMARC_LABELS.amber   + ' (' + dmarcCounts.amber   + ')<br>' +
+      '<i class="legend-swatch" style="background:' + DMARC_COLORS.red     + '"></i>' + DMARC_LABELS.red     + ' (' + dmarcCounts.red     + ')<br>' +
+      '<i class="legend-swatch" style="background:' + DMARC_COLORS.missing + '"></i>' + DMARC_LABELS.missing + ' (' + dmarcCounts.missing + ')' +
+      '</div>' +
+      '<div class="legend-group">' +
+      '<span class="legend-group-label">Hosting Sovereignty</span>' +
+      '<i class="legend-swatch" style="background:' + HOSTING_COLORS['india-govt']    + '"></i>' + HOSTING_LABELS['india-govt']    + ' (' + hostingCounts['india-govt']    + ')<br>' +
+      '<i class="legend-swatch" style="background:' + HOSTING_COLORS['india-private'] + '"></i>' + HOSTING_LABELS['india-private'] + ' (' + hostingCounts['india-private'] + ')<br>' +
+      '<i class="legend-swatch" style="background:' + HOSTING_COLORS['foreign-cloud'] + '"></i>' + HOSTING_LABELS['foreign-cloud'] + ' (' + hostingCounts['foreign-cloud'] + ')<br>' +
+      '<i class="legend-swatch" style="background:' + HOSTING_COLORS['foreign-other'] + '"></i>' + HOSTING_LABELS['foreign-other'] + ' (' + hostingCounts['foreign-other'] + ')<br>' +
+      '<i class="legend-swatch" style="background:' + HOSTING_COLORS['unknown']       + '"></i>' + HOSTING_LABELS['unknown']       + ' (' + hostingCounts['unknown']       + ')' +
+      '</div>' +
       '<button class="color-toggle" aria-label="Switch to colorblind-safe colors">\u25D0 Colorblind mode</button>' +
       '</div>';
     L.DomEvent.disableClickPropagation(div);
@@ -519,25 +571,57 @@ async function loadData() {
           const color = getColor(m);
           const conf = Math.round(m.classification_confidence || 0);
           const badge = `<span class="provider-badge" style="background:${color};color:#000;font-size:0.75em;padding:1px 4px">${escapeHtml(label)}</span>`;
-          muniItems += `<div style="margin:2px 0"><strong>${escapeHtml(m.name)}</strong> &mdash; ${escapeHtml(m.domain || 'unknown')} ${badge} <span style="color:#888;font-size:0.8em">${conf}%</span></div>`;
+          const tier = dmarcTier(m);
+          const policy = (m.dmarc && m.dmarc.policy) ? `p=${m.dmarc.policy}` : 'no record';
+          const dmarcBadge = `<span title="DMARC ${tier}: ${escapeHtml(policy)}" style="display:inline-block;width:0.7em;height:0.7em;border-radius:50%;background:${DMARC_COLORS[tier]};vertical-align:middle;margin-left:3px"></span>`;
+          const hTier = hostingTier(m);
+          const hAsns = (m.hosting && m.hosting.asns) ? m.hosting.asns.map(a => `AS${a.asn}${a.name ? ' ' + a.name : ''}`).join(', ') : '';
+          const hCountries = (m.hosting && m.hosting.countries && m.hosting.countries.length) ? ' [' + m.hosting.countries.join(',') + ']' : '';
+          const hostingTitle = `Hosting ${HOSTING_LABELS[hTier]}${hAsns ? ': ' + hAsns : ''}${hCountries}`;
+          const hostingBadge = `<span title="${escapeHtml(hostingTitle)}" style="display:inline-block;width:0.7em;height:0.7em;background:${HOSTING_COLORS[hTier]};vertical-align:middle;margin-left:3px"></span>`;
+          muniItems += `<div style="margin:2px 0"><strong>${escapeHtml(m.name)}</strong> &mdash; ${escapeHtml(m.domain || 'unknown')} ${badge}${dmarcBadge}${hostingBadge} <span style="color:#888;font-size:0.8em">${conf}%</span></div>`;
         }
       }
 
       // Summary counts
       const provCounts = {};
+      const stateDmarc = { green: 0, amber: 0, red: 0, missing: 0 };
+      const stateHosting = { 'india-govt': 0, 'india-private': 0, 'foreign-cloud': 0, 'foreign-other': 0, 'unknown': 0 };
       for (const m of munis) {
         const p = m.provider || 'unknown';
         provCounts[p] = (provCounts[p] || 0) + 1;
+        stateDmarc[dmarcTier(m)]++;
+        stateHosting[hostingTier(m)]++;
       }
       const summary = Object.entries(provCounts)
         .sort((a, b) => b[1] - a[1])
         .map(([p, c]) => `${LABELS[p] || p}: ${c}`)
         .join(', ');
+      const dmarcSummaryParts = [];
+      for (const t of ['green', 'amber', 'red', 'missing']) {
+        if (stateDmarc[t] > 0) {
+          dmarcSummaryParts.push(`<span style="color:${DMARC_COLORS[t]};font-weight:600">${t}</span>: ${stateDmarc[t]}`);
+        }
+      }
+      const dmarcSummary = dmarcSummaryParts.length
+        ? `<div class="popup-meta" style="font-size:0.85em">DMARC — ${dmarcSummaryParts.join(', ')}</div>`
+        : '';
+      const hostingSummaryParts = [];
+      for (const t of ['india-govt', 'india-private', 'foreign-cloud', 'foreign-other', 'unknown']) {
+        if (stateHosting[t] > 0) {
+          hostingSummaryParts.push(`<span style="color:${HOSTING_COLORS[t]};font-weight:600">${t.replace('india-', 'IN-').replace('foreign-', 'FOR-')}</span>: ${stateHosting[t]}`);
+        }
+      }
+      const hostingSummary = hostingSummaryParts.length
+        ? `<div class="popup-meta" style="font-size:0.85em">Hosting — ${hostingSummaryParts.join(', ')}</div>`
+        : '';
 
       layer.bindPopup(
         `<div class="info-popup">` +
         `<strong>${stateLabel}</strong> &mdash; ${munis.length} entit${munis.length === 1 ? 'y' : 'ies'}<br>` +
         `<div class="popup-meta">${escapeHtml(summary)}</div>` +
+        dmarcSummary +
+        hostingSummary +
         `<div class="popup-section"><div class="popup-toggle${isMobile ? '' : ' popup-toggle-open'}" onclick="window.toggleSection(this)">Entities</div>` +
         `<div class="popup-section-body" style="${showBody}">${muniItems}</div></div>` +
         `</div>`,

@@ -121,6 +121,41 @@ INDIAN_ISP_ASNS: dict[int, str] = {
 SWISS_ISP_ASNS = INDIAN_ISP_ASNS
 
 
+# ASNs operated directly by Indian government / NIC (sovereign by definition).
+INDIAN_GOV_ASNS: dict[int, str] = {
+    4758: "NIC (National Informatics Centre)",
+    55824: "NKN (National Knowledge Network)",
+    45820: "TATA Teleservices (govt edge)",
+}
+
+
+# Major foreign cloud / CDN ASNs — mail routed through these is outside Indian
+# jurisdiction regardless of whose domain it is.
+FOREIGN_CLOUD_ASNS: dict[int, str] = {
+    8075: "Microsoft",
+    8068: "Microsoft",
+    8069: "Microsoft",
+    15169: "Google",
+    396982: "Google",
+    16509: "Amazon AWS",
+    14618: "Amazon AWS",
+    16550: "Amazon AWS (SES)",
+    13335: "Cloudflare",
+    209242: "Cloudflare",
+    32934: "Meta",
+    714: "Apple",
+    792: "Oracle",
+    31898: "Oracle",
+    8560: "IONOS",
+    20473: "DigitalOcean / Choopa",
+    14061: "DigitalOcean",
+    16276: "OVH",
+    24940: "Hetzner",
+    63949: "Akamai / Linode",
+    20940: "Akamai",
+}
+
+
 def match_patterns(value: str, patterns: tuple[str, ...] | list[str]) -> bool:
     """Case-insensitive substring match of value against any pattern."""
     if not value or not patterns:

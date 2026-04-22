@@ -588,15 +588,31 @@ async def resolve_municipality_domain(
         if mx:
             sources["wikidata"].add(website_domain)
 
-    # Guess domains
+    # Guess domains — with parent-zone MX fallback for Districts.
+    # District subdomains (e.g. pune.mh.nic.in) rarely have their own MX and
+    # route mail through the state zone (mh.nic.in). When that happens we
+    # record the parent zone as the effective mail domain so classification
+    # has a real MX to work with, and flag the entry so the frontend knows
+    # this district shares infrastructure with the parent state.
+    parent_mx_guesses: set[str] = set()
     for guess in guess_domains(name, canton, entity_type):
         mx = await lookup_mx(guess)
         if mx:
             sources["guess"].add(guess)
+        elif entity_type == "District":
+            parts = guess.split(".")
+            if len(parts) >= 4:
+                parent = ".".join(parts[1:])
+                if await lookup_mx(parent):
+                    sources["guess"].add(parent)
+                    parent_mx_guesses.add(parent)
 
     # 3. Score and pick best
     result = score_domain_sources(sources, name, website_domain or "")
     entry.update(result)
+
+    if entry.get("domain") in parent_mx_guesses:
+        entry.setdefault("flags", []).append("mx_from_parent_zone")
 
     # Add bfs_only flag if applicable
     if m.get("bfs_only"):

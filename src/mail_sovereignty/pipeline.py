@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import subprocess
 import time
@@ -12,6 +13,12 @@ from loguru import logger
 
 from .classifier import classify_many
 from .models import ClassificationResult, Provider
+from .posture import (
+    DmarcPosture,
+    HostingPosture,
+    probe_dmarc_posture,
+    probe_hosting,
+)
 
 # Map internal Provider enum values to data.json output names
 PROVIDER_OUTPUT_NAMES: dict[str, str] = {
@@ -40,6 +47,8 @@ _FRONTEND_FIELDS = {
     "classification_confidence",
     "classification_signals",
     "gateway",
+    "dmarc",
+    "hosting",
 }
 
 
@@ -52,6 +61,8 @@ def _minify_for_frontend(full_output: dict[str, Any]) -> dict[str, Any]:
             {"kind": s["kind"], "detail": s["detail"]}
             for s in entry.get("classification_signals", [])
         ]
+        if "dmarc" in mini:
+            mini["dmarc"] = {k: v for k, v in mini["dmarc"].items() if k != "raw"}
         municipalities[bfs] = mini
     return {
         "generated": full_output["generated"],
@@ -66,7 +77,9 @@ def _output_provider(provider: Provider) -> str:
 
 
 def _serialize_result(
-    entry: dict[str, Any], result: ClassificationResult
+    entry: dict[str, Any],
+    result: ClassificationResult,
+    dmarc: DmarcPosture | None = None,
 ) -> dict[str, Any]:
     """Serialize a ClassificationResult into a data.json municipality entry."""
     provider = _output_provider(result.provider)
@@ -98,6 +111,9 @@ def _serialize_result(
     if result.gateway:
         out["gateway"] = result.gateway
 
+    if dmarc is not None:
+        out["dmarc"] = dmarc.model_dump()
+
     # Pass through resolve-level fields
     if "sources_detail" in entry:
         out["sources_detail"] = entry["sources_detail"]
@@ -105,6 +121,42 @@ def _serialize_result(
         out["resolve_flags"] = entry["flags"]
 
     return out
+
+
+async def _gather_dmarc_posture(
+    domains: list[str], max_concurrency: int = 20
+) -> dict[str, DmarcPosture]:
+    """Probe DMARC posture for each domain concurrently."""
+    semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def _one(domain: str) -> tuple[str, DmarcPosture]:
+        async with semaphore:
+            try:
+                return domain, await probe_dmarc_posture(domain)
+            except Exception:
+                logger.exception("DMARC posture probe failed for {}", domain)
+                return domain, DmarcPosture(present=False, tier="missing")
+
+    pairs = await asyncio.gather(*[_one(d) for d in domains])
+    return dict(pairs)
+
+
+async def _gather_hosting_posture(
+    mx_by_domain: dict[str, list[str]], max_concurrency: int = 20
+) -> dict[str, HostingPosture]:
+    """Probe hosting posture (ASN/country sovereignty) per domain."""
+    semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def _one(domain: str, mx_hosts: list[str]) -> tuple[str, HostingPosture]:
+        async with semaphore:
+            try:
+                return domain, await probe_hosting(mx_hosts)
+            except Exception:
+                logger.exception("Hosting posture probe failed for {}", domain)
+                return domain, HostingPosture(tier="unknown")
+
+    pairs = await asyncio.gather(*[_one(d, mx) for d, mx in mx_by_domain.items()])
+    return dict(pairs)
 
 
 async def run(domains_path: Path, output_path: Path) -> None:
@@ -152,6 +204,10 @@ async def run(domains_path: Path, output_path: Path) -> None:
         if "flags" in entry:
             results[entry["bfs"]]["resolve_flags"] = entry["flags"]
 
+    # Run DMARC posture probes in parallel with classification. Posture does
+    # not influence provider classification, so it runs independently.
+    dmarc_task = asyncio.create_task(_gather_dmarc_posture(unique_domains))
+
     # Classify domains
     async for domain, classification in classify_many(unique_domains):
         for entry in domain_to_entries[domain]:
@@ -172,6 +228,38 @@ async def run(domains_path: Path, output_path: Path) -> None:
             classification.confidence,
             len(classification.evidence),
         )
+
+    # Attach DMARC posture to each entry that has a domain
+    dmarc_by_domain = await dmarc_task
+    for domain, dmarc in dmarc_by_domain.items():
+        for entry in domain_to_entries.get(domain, []):
+            results[entry["bfs"]]["dmarc"] = dmarc.model_dump()
+
+    dmarc_counts: dict[str, int] = {}
+    for r in results.values():
+        tier = r.get("dmarc", {}).get("tier", "missing")
+        dmarc_counts[tier] = dmarc_counts.get(tier, 0) + 1
+
+    # Hosting sovereignty: run after classification so we know the MX hosts
+    # actually resolved for each domain. Skip domains with no MX.
+    mx_by_domain: dict[str, list[str]] = {}
+    for domain in unique_domains:
+        entries_for = domain_to_entries.get(domain, [])
+        if not entries_for:
+            continue
+        mx_hosts = results[entries_for[0]["bfs"]].get("mx", [])
+        if mx_hosts:
+            mx_by_domain[domain] = mx_hosts
+
+    hosting_by_domain = await _gather_hosting_posture(mx_by_domain)
+    for domain, hosting in hosting_by_domain.items():
+        for entry in domain_to_entries.get(domain, []):
+            results[entry["bfs"]]["hosting"] = hosting.model_dump()
+
+    hosting_counts: dict[str, int] = {}
+    for r in results.values():
+        tier = r.get("hosting", {}).get("tier", "unknown")
+        hosting_counts[tier] = hosting_counts.get(tier, 0) + 1
 
     # Final counts
     counts = {}
@@ -200,6 +288,22 @@ async def run(domains_path: Path, output_path: Path) -> None:
         counts.get("independent", 0),
     )
     logger.info("  Unknown/No MX    {:>5}", cat_counts.get("unknown", 0))
+
+    logger.info(
+        "  DMARC            green={} amber={} red={} missing={}",
+        dmarc_counts.get("green", 0),
+        dmarc_counts.get("amber", 0),
+        dmarc_counts.get("red", 0),
+        dmarc_counts.get("missing", 0),
+    )
+    logger.info(
+        "  Hosting          gov={} india-priv={} foreign-cloud={} foreign-other={} unknown={}",
+        hosting_counts.get("india-govt", 0),
+        hosting_counts.get("india-private", 0),
+        hosting_counts.get("foreign-cloud", 0),
+        hosting_counts.get("foreign-other", 0),
+        hosting_counts.get("unknown", 0),
+    )
 
     sorted_counts = dict(sorted(counts.items()))
     sorted_munis = dict(sorted(results.items(), key=lambda kv: int(kv[0])))

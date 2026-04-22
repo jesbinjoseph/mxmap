@@ -1,7 +1,7 @@
 """Tests for the classification pipeline."""
 
 import json
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -13,7 +13,38 @@ from mail_sovereignty.pipeline import (
     run,
 )
 from mail_sovereignty.models import ClassificationResult, Evidence, Provider, SignalKind
+from mail_sovereignty.posture import DmarcPosture, HostingPosture
 from mail_sovereignty.probes import WEIGHTS
+
+
+@pytest.fixture(autouse=True)
+def _stub_dmarc_posture():
+    """Default DMARC posture probe stub: no record present, tier=missing.
+
+    Pipeline tests that care about DMARC override this via their own patch.
+    """
+    missing = DmarcPosture(present=False, tier="missing")
+    with patch(
+        "mail_sovereignty.pipeline.probe_dmarc_posture",
+        new_callable=AsyncMock,
+        return_value=missing,
+    ):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def _stub_hosting_posture():
+    """Default hosting posture probe stub: tier=unknown, no ASNs.
+
+    Pipeline tests that care about hosting override this via their own patch.
+    """
+    unknown = HostingPosture(tier="unknown")
+    with patch(
+        "mail_sovereignty.pipeline.probe_hosting",
+        new_callable=AsyncMock,
+        return_value=unknown,
+    ):
+        yield
 
 
 class TestProviderOutputNames:
@@ -54,7 +85,13 @@ class TestSerializeResult:
             mx_hosts=["example.mail.protection.outlook.com"],
             spf_raw="v=spf1 include:spf.protection.outlook.com -all",
         )
-        entry = {"bfs": "351", "name": "Bern", "canton": "Bern", "type": "MC", "domain": "bern.ch"}
+        entry = {
+            "bfs": "351",
+            "name": "Bern",
+            "canton": "Bern",
+            "type": "MC",
+            "domain": "bern.ch",
+        }
         out = _serialize_result(entry, result)
 
         assert out["bfs"] == "351"
@@ -292,6 +329,175 @@ class TestPipelineRun:
         # Top-level fields stripped
         assert "total" not in mini
         assert "counts" not in mini
+
+
+class TestPipelineDmarc:
+    @pytest.fixture
+    def domains_json(self, tmp_path):
+        data = {
+            "municipalities": {
+                "351": {
+                    "bfs": "351",
+                    "name": "Bern",
+                    "canton": "Bern",
+                    "domain": "bern.ch",
+                },
+            }
+        }
+        path = tmp_path / "municipality_domains.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        return path
+
+    async def test_dmarc_attached_to_entry(self, domains_json, tmp_path):
+        result = ClassificationResult(
+            provider=Provider.MS365, confidence=0.5, mx_hosts=[]
+        )
+
+        async def fake_classify_many(domains, max_concurrency=20):
+            for d in domains:
+                yield d, result
+
+        dmarc = DmarcPosture(
+            present=True,
+            policy="reject",
+            subdomain_policy="reject",
+            pct=100,
+            tier="green",
+            raw="v=DMARC1; p=reject",
+        )
+        output_path = tmp_path / "data.json"
+        with (
+            patch(
+                "mail_sovereignty.pipeline.classify_many",
+                side_effect=fake_classify_many,
+            ),
+            patch(
+                "mail_sovereignty.pipeline.probe_dmarc_posture",
+                new_callable=AsyncMock,
+                return_value=dmarc,
+            ),
+        ):
+            await run(domains_json, output_path)
+
+        data = json.loads(output_path.read_text())
+        entry = data["municipalities"]["351"]
+        assert entry["dmarc"]["tier"] == "green"
+        assert entry["dmarc"]["policy"] == "reject"
+        assert entry["dmarc"]["raw"] == "v=DMARC1; p=reject"
+
+    async def test_min_json_strips_dmarc_raw(self, domains_json, tmp_path):
+        result = ClassificationResult(
+            provider=Provider.MS365, confidence=0.5, mx_hosts=[]
+        )
+
+        async def fake_classify_many(domains, max_concurrency=20):
+            for d in domains:
+                yield d, result
+
+        dmarc = DmarcPosture(
+            present=True, policy="reject", tier="green", raw="v=DMARC1; p=reject"
+        )
+        output_path = tmp_path / "data.json"
+        with (
+            patch(
+                "mail_sovereignty.pipeline.classify_many",
+                side_effect=fake_classify_many,
+            ),
+            patch(
+                "mail_sovereignty.pipeline.probe_dmarc_posture",
+                new_callable=AsyncMock,
+                return_value=dmarc,
+            ),
+        ):
+            await run(domains_json, output_path)
+
+        mini = json.loads((tmp_path / "data.min.json").read_text())
+        entry = mini["municipalities"]["351"]
+        assert "dmarc" in entry
+        assert entry["dmarc"]["tier"] == "green"
+        # raw is excluded from the minified payload
+        assert "raw" not in entry["dmarc"]
+
+
+class TestPipelineHosting:
+    @pytest.fixture
+    def domains_json(self, tmp_path):
+        data = {
+            "municipalities": {
+                "351": {
+                    "bfs": "351",
+                    "name": "Bern",
+                    "canton": "Bern",
+                    "domain": "bern.ch",
+                },
+            }
+        }
+        path = tmp_path / "municipality_domains.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        return path
+
+    async def test_hosting_attached_and_minified(self, domains_json, tmp_path):
+        result = ClassificationResult(
+            provider=Provider.NIC,
+            confidence=0.9,
+            mx_hosts=["mx.gov.in"],
+        )
+
+        async def fake_classify_many(domains, max_concurrency=20):
+            for d in domains:
+                yield d, result
+
+        hosting = HostingPosture(
+            tier="india-govt",
+            asns=[],
+            countries=["IN"],
+        )
+        output_path = tmp_path / "data.json"
+        with (
+            patch(
+                "mail_sovereignty.pipeline.classify_many",
+                side_effect=fake_classify_many,
+            ),
+            patch(
+                "mail_sovereignty.pipeline.probe_hosting",
+                new_callable=AsyncMock,
+                return_value=hosting,
+            ),
+        ):
+            await run(domains_json, output_path)
+
+        full = json.loads(output_path.read_text())
+        assert full["municipalities"]["351"]["hosting"]["tier"] == "india-govt"
+        assert full["municipalities"]["351"]["hosting"]["countries"] == ["IN"]
+
+        mini = json.loads((tmp_path / "data.min.json").read_text())
+        assert mini["municipalities"]["351"]["hosting"]["tier"] == "india-govt"
+
+    async def test_hosting_skipped_when_no_mx(self, domains_json, tmp_path):
+        """Domains that resolved but returned no MX hosts shouldn't trigger probe_hosting."""
+        result = ClassificationResult(
+            provider=Provider.INDEPENDENT, confidence=0.0, mx_hosts=[]
+        )
+
+        async def fake_classify_many(domains, max_concurrency=20):
+            for d in domains:
+                yield d, result
+
+        probe_mock = AsyncMock(return_value=HostingPosture(tier="unknown"))
+        output_path = tmp_path / "data.json"
+        with (
+            patch(
+                "mail_sovereignty.pipeline.classify_many",
+                side_effect=fake_classify_many,
+            ),
+            patch("mail_sovereignty.pipeline.probe_hosting", probe_mock),
+        ):
+            await run(domains_json, output_path)
+
+        probe_mock.assert_not_called()
+        data = json.loads(output_path.read_text())
+        # Entry has no 'hosting' key since probe never ran
+        assert "hosting" not in data["municipalities"]["351"]
 
 
 class TestMinifyForFrontend:

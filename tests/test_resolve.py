@@ -103,13 +103,17 @@ class TestGuessDomains:
 
     def test_state_type_uses_abbreviation(self):
         """State entities guess {abbrev}.gov.in."""
-        domains = guess_domains("Maharashtra", canton="Maharashtra", entity_type="State")
+        domains = guess_domains(
+            "Maharashtra", canton="Maharashtra", entity_type="State"
+        )
         assert "mh.gov.in" in domains
         assert "mh.nic.in" in domains
 
     def test_state_type_no_mc_suffix(self):
         """State entities should NOT get MC-style patterns."""
-        domains = guess_domains("Maharashtra", canton="Maharashtra", entity_type="State")
+        domains = guess_domains(
+            "Maharashtra", canton="Maharashtra", entity_type="State"
+        )
         assert not any("mc.gov.in" in d for d in domains)
 
     def test_ut_type(self):
@@ -759,6 +763,77 @@ class TestResolveMunicipalityDomain:
 
         assert "bfs_only" in result["flags"]
 
+    async def test_district_parent_zone_mx_fallback(self):
+        """District subdomain lacking its own MX inherits the state zone."""
+        m = {
+            "bfs": "501",
+            "name": "Pune District",
+            "canton": "Maharashtra",
+            "type": "District",
+            "website": "",
+        }
+        overrides = {}
+        client = AsyncMock()
+
+        async def fake_lookup_mx(domain):
+            if domain == "mh.nic.in":
+                return ["mail.nic.in"]
+            return []
+
+        with patch("mail_sovereignty.resolve.lookup_mx", side_effect=fake_lookup_mx):
+            result = await resolve_municipality_domain(m, overrides, client)
+
+        assert result["domain"] == "mh.nic.in"
+        assert result["source"] == "guess"
+        assert "mx_from_parent_zone" in result["flags"]
+
+    async def test_district_parent_zone_skipped_when_direct_mx_exists(self):
+        """If the district subdomain has its own MX, no parent fallback flag."""
+        m = {
+            "bfs": "501",
+            "name": "Pune District",
+            "canton": "Maharashtra",
+            "type": "District",
+            "website": "",
+        }
+        overrides = {}
+        client = AsyncMock()
+
+        async def fake_lookup_mx(domain):
+            if domain == "pune.mh.nic.in":
+                return ["mail.pune.mh.nic.in"]
+            return []
+
+        with patch("mail_sovereignty.resolve.lookup_mx", side_effect=fake_lookup_mx):
+            result = await resolve_municipality_domain(m, overrides, client)
+
+        assert result["domain"] == "pune.mh.nic.in"
+        assert "mx_from_parent_zone" not in result.get("flags", [])
+
+    async def test_parent_zone_fallback_not_applied_for_non_district(self):
+        """Parent-zone MX fallback only applies to Districts."""
+        m = {
+            "bfs": "1999",
+            "name": "Pune Municipal",
+            "canton": "Maharashtra",
+            "type": "MC",
+            "website": "",
+        }
+        overrides = {}
+        client = AsyncMock()
+
+        async def fake_lookup_mx(domain):
+            # Only the state zone has MX — MC should not inherit from it
+            if domain == "mh.nic.in":
+                return ["mail.nic.in"]
+            return []
+
+        with patch("mail_sovereignty.resolve.lookup_mx", side_effect=fake_lookup_mx):
+            result = await resolve_municipality_domain(m, overrides, client)
+
+        assert result["domain"] == ""
+        assert result["source"] == "none"
+
     async def test_redirect_domain_used_as_source(self):
         """Saas-Balen case: website redirects to postal code domain."""
         m = {
@@ -835,14 +910,17 @@ class TestResolveRun:
             return_value=httpx.Response(404)
         )
 
-        with patch(
-            "mail_sovereignty.resolve.fetch_bfs_municipalities",
-            new_callable=AsyncMock,
-            return_value=bfs_data,
-        ), patch(
-            "mail_sovereignty.resolve.lookup_mx",
-            new_callable=AsyncMock,
-            return_value=["mx.mcgm.gov.in"],
+        with (
+            patch(
+                "mail_sovereignty.resolve.fetch_bfs_municipalities",
+                new_callable=AsyncMock,
+                return_value=bfs_data,
+            ),
+            patch(
+                "mail_sovereignty.resolve.lookup_mx",
+                new_callable=AsyncMock,
+                return_value=["mx.mcgm.gov.in"],
+            ),
         ):
             output = tmp_path / "municipality_domains.json"
             overrides = tmp_path / "overrides.json"
@@ -915,14 +993,17 @@ class TestResolveRun:
             return_value=httpx.Response(404)
         )
 
-        with patch(
-            "mail_sovereignty.resolve.fetch_bfs_municipalities",
-            new_callable=AsyncMock,
-            return_value=bfs_data,
-        ), patch(
-            "mail_sovereignty.resolve.lookup_mx",
-            new_callable=AsyncMock,
-            return_value=["mx.mcgm.gov.in"],
+        with (
+            patch(
+                "mail_sovereignty.resolve.fetch_bfs_municipalities",
+                new_callable=AsyncMock,
+                return_value=bfs_data,
+            ),
+            patch(
+                "mail_sovereignty.resolve.lookup_mx",
+                new_callable=AsyncMock,
+                return_value=["mx.mcgm.gov.in"],
+            ),
         ):
             output = tmp_path / "municipality_domains.json"
             overrides = tmp_path / "overrides.json"
@@ -1025,13 +1106,16 @@ class TestResolveRunErrorIsolation:
                 "flags": [],
             }
 
-        with patch(
-            "mail_sovereignty.resolve.fetch_bfs_municipalities",
-            new_callable=AsyncMock,
-            return_value=bfs_data,
-        ), patch(
-            "mail_sovereignty.resolve.resolve_municipality_domain",
-            side_effect=_flaky_resolve,
+        with (
+            patch(
+                "mail_sovereignty.resolve.fetch_bfs_municipalities",
+                new_callable=AsyncMock,
+                return_value=bfs_data,
+            ),
+            patch(
+                "mail_sovereignty.resolve.resolve_municipality_domain",
+                side_effect=_flaky_resolve,
+            ),
         ):
             output = tmp_path / "municipality_domains.json"
             overrides = tmp_path / "overrides.json"
@@ -1055,14 +1139,17 @@ class TestResolveRunLogging:
             return_value=httpx.Response(200, json={"results": {"bindings": []}})
         )
 
-        with patch(
-            "mail_sovereignty.resolve.fetch_bfs_municipalities",
-            new_callable=AsyncMock,
-            return_value=bfs_data,
-        ), patch(
-            "mail_sovereignty.resolve.lookup_mx",
-            new_callable=AsyncMock,
-            return_value=[],
+        with (
+            patch(
+                "mail_sovereignty.resolve.fetch_bfs_municipalities",
+                new_callable=AsyncMock,
+                return_value=bfs_data,
+            ),
+            patch(
+                "mail_sovereignty.resolve.lookup_mx",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
         ):
             output = tmp_path / "municipality_domains.json"
             overrides = tmp_path / "overrides.json"

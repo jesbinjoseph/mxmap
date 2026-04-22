@@ -188,7 +188,11 @@ async def fetch_igod_districts() -> list[dict[str, str]]:
                     return []
                 names = _extract_igod_district_names(response.text)
                 return [
-                    {"name": district_name, "state": state_name, "type": IGOD_DISTRICT_TYPE}
+                    {
+                        "name": district_name,
+                        "state": state_name,
+                        "type": IGOD_DISTRICT_TYPE,
+                    }
                     for district_name in names
                 ]
 
@@ -268,7 +272,9 @@ async def fetch_bfs_municipalities(
         try:
             igod_entries = await fetch_igod_districts()
         except Exception as exc:
-            logger.warning("Failed to load iGOD districts, continuing with CSV only: {}", exc)
+            logger.warning(
+                "Failed to load iGOD districts, continuing with CSV only: {}", exc
+            )
             igod_entries = []
 
         if igod_entries:
